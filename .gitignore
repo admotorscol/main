@@ -1,0 +1,12 @@
+# Herramientas de prueba / exploración
+.playwright-mcp/
+screenshots/
+
+# Archivos temporales de LibreOffice
+.~lock.*
+*.~lock*
+~$*.ods
+
+# Sistema
+.DS_Store
+Thumbs.db

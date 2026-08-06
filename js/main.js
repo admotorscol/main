@@ -1,0 +1,472 @@
+/* ============================================================
+   AD MOTORS — Lógica del sitio
+   Fuente de datos: Google Sheets vía Apps Script (config.js)
+   ============================================================ */
+
+(function () {
+  'use strict';
+
+  const CFG = ADMOTORS_CONFIG;
+  const grid = document.getElementById('cardsGrid');
+  const select = document.getElementById('carSelect');
+  const countEl = document.getElementById('inventoryCount');
+  const toast = document.getElementById('toast');
+
+  /* Caché local del inventario (30 min): las visitas se sirven al instante
+     mientras Apps Script arranca en frío (cold start de Google). */
+  const CACHE_KEY = 'admotors-cars-v1';
+  const CACHE_TTL = 30 * 60 * 1000;
+
+  function readCache() {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (!raw) return null;
+      const obj = JSON.parse(raw);
+      if (!obj || !obj.ts || !Array.isArray(obj.cars)) return null;
+      if (Date.now() - obj.ts > CACHE_TTL) return null;
+      return obj.cars;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function writeCache(cars) {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), cars }));
+    } catch (e) { /* sin almacenamiento disponible */ }
+  }
+
+  const money = new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    maximumFractionDigits: 0
+  });
+
+  const number = new Intl.NumberFormat('es-CO');
+
+  const formatter = {
+    money: (v) => money.format(Number(v) || 0),
+    number: (v) => number.format(Number(v) || 0)
+  };
+
+  /* Colecciona las imágenes del carro: columna "Imagen", "Imagen 2", "Imagen 3"…
+     o el arreglo "images" ya agrupado por Apps Script */
+  function getImages(car) {
+    if (Array.isArray(car.images) && car.images.length) {
+      return car.images.filter((v) => v && String(v).trim() !== '');
+    }
+    const out = [];
+    Object.keys(car).forEach((k) => {
+      if (/^imagen(\s*\d*)?$/i.test(k) && car[k] && String(car[k]).trim() !== '') {
+        out.push(car[k]);
+      }
+    });
+    return out.length ? out : [CFG.DEFAULT_IMAGE];
+  }
+
+  /* Detecta la orientación real de una imagen (vertical, cuadrada u horizontal)
+     y aplica el ratio a su contenedor vía --img-ratio + clase de orientación.
+     Los ratios se acotan para que la grilla no se descontrole con fotos extremas. */
+  function applyImageRatio(img, container, onApplied) {
+    const apply = () => {
+      const w = img.naturalWidth;
+      const h = img.naturalHeight;
+      if (!w || !h) return;
+      const raw = w / h;
+      const ratio = Math.min(1.3, Math.max(0.55, raw));
+      container.style.setProperty('--img-ratio', ratio.toFixed(4));
+      container.classList.remove('is-tall', 'is-square', 'is-wide');
+      container.classList.add(raw < 0.95 ? 'is-tall' : raw > 1.25 ? 'is-wide' : 'is-square');
+      if (onApplied) onApplied();
+    };
+    if (img.complete && img.naturalWidth) {
+      apply();
+    } else {
+      img.addEventListener('load', apply, { once: true });
+      img.addEventListener('error', apply, { once: true });
+    }
+  }
+
+  let cars = [];
+
+  /* ---------- Carga de datos ---------- */
+
+  /* Apps Script a veces falla en el primer arranque (404 transitorio);
+     se reintenta hasta 3 veces antes de mostrar el inventario vacío. */
+  async function fetchCars() {
+    let lastErr;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const res = await fetch(CFG.APPS_SCRIPT_URL, { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        if (!data || !Array.isArray(data.cars)) {
+          throw new Error('Respuesta inválida del servidor');
+        }
+        return data.cars;
+      } catch (err) {
+        lastErr = err;
+        console.warn('Intento ' + attempt + ' fallido al cargar Google Sheets:', err);
+        if (attempt < 3) await new Promise((r) => setTimeout(r, 1500 * attempt));
+      }
+    }
+    console.error('No se pudo cargar el inventario desde Google Sheets:', lastErr);
+    return [];
+  }
+
+  function renderSkeleton() {
+    grid.innerHTML = Array.from({ length: 6 }, () => `
+      <article class="card card--skeleton" aria-hidden="true">
+        <div class="card-img skeleton-block"></div>
+        <div class="card-specs">
+          <div class="skeleton-line" style="width: 45%"></div>
+          <div class="skeleton-line" style="width: 70%"></div>
+          <div class="skeleton-line" style="width: 55%"></div>
+          <div class="skeleton-line" style="width: 65%"></div>
+        </div>
+        <div class="skeleton-line" style="width: 60%; margin: 0 16px 10px"></div>
+        <div class="card-bid">
+          <div class="skeleton-line" style="width: 50%"></div>
+          <div class="skeleton-line" style="width: 100%; height: 34px"></div>
+        </div>
+      </article>`).join('');
+  }
+
+  async function init() {
+    const cached = readCache();
+
+    if (cached) {
+      /* Visitante recurrente: muestra al instante y refresca en segundo plano */
+      renderCars(cached);
+      fetchCars().then((fresh) => {
+        if (!fresh || !fresh.length) return;
+        if (JSON.stringify(fresh) !== JSON.stringify(cached)) renderCars(fresh);
+        writeCache(fresh);
+      });
+      return;
+    }
+
+    /* Primera visita: cards esqueleto mientras Google arranca */
+    renderSkeleton();
+    const fresh = await fetchCars();
+    writeCache(fresh);
+    renderCars(fresh);
+  }
+
+  /* ---------- Render ---------- */
+
+  function renderCars(list) {
+    cars = list;
+    grid.innerHTML = '';
+
+    if (!cars.length) {
+      countEl.textContent = 'Sin autos disponibles por ahora';
+      grid.innerHTML = '<p class="cards-empty">No hay carros publicados en el inventario. Vuelve pronto.</p>';
+      return;
+    }
+
+    cars.forEach((car, i) => {
+      const card = buildCard(car, i);
+      grid.appendChild(card);
+    });
+
+    countEl.textContent = cars.length + ' autos disponibles';
+    buildSelect();
+  }
+
+  function buildCard(car, i) {
+    const card = document.createElement('article');
+    card.className = 'card';
+    card.dataset.id = i;
+
+    const images = getImages(car);
+    const img = images[0];
+    const marca = car.Marca || 'Sin marca';
+    const modelo = car.Modelo || '';
+    const anio = car.Año || car.Anio || '—';
+    const precio = Number(car.Precio) || 0;
+    const km = car.Km || 0;
+    const ubicacion = car.Ubicación || car.Ubicacion || 'Medellín';
+
+    const minBid = Math.round(precio * (CFG.BID_MIN_PERCENT / 100));
+    const maxBid = precio;
+    const start = minBid;
+
+    card.innerHTML = `
+      <div class="card-img">
+        <span class="card-badge">Auto ${i + 1}</span>
+        <img src="${img}" alt="${marca} ${modelo} ${anio}" loading="eager" decoding="async" fetchpriority="high" onerror="this.src='${CFG.DEFAULT_IMAGE}'">
+      </div>
+      <div class="card-specs">
+        <div class="card-spec">
+          <span class="spec-label">Marca</span>
+          <span class="spec-value">${marca}</span>
+        </div>
+        <div class="card-spec">
+          <span class="spec-label">Precio</span>
+          <span class="spec-value price">${formatter.money(precio)}</span>
+        </div>
+        <div class="card-spec">
+          <span class="spec-label">Año</span>
+          <span class="spec-value">${anio}</span>
+        </div>
+        <div class="card-spec">
+          <span class="spec-label">Km</span>
+          <span class="spec-value">${formatter.number(km)} km</span>
+        </div>
+      </div>
+      <div class="card-location">Ubicación: ${ubicacion}</div>
+      <div class="card-bid">
+        <div class="bid-head">
+          <span>Tu puja</span>
+          <strong class="bid-value">${formatter.money(start)}</strong>
+        </div>
+        <input class="bid-slider" type="range" min="${minBid}" max="${maxBid}" step="${CFG.BID_STEP}" value="${start}" aria-label="Valor de tu puja para ${marca} ${modelo}">
+        <div class="bid-labels">
+          <span>Mín. ${formatter.money(minBid)}</span>
+          <span>${CFG.BID_MIN_PERCENT}% → 100%</span>
+        </div>
+        <button class="card-features-btn" type="button">Ver características del carro</button>
+        <button class="bid-btn" type="button">Enviar puja</button>
+        <p class="bid-status" aria-live="polite"></p>
+      </div>
+    `;
+
+    const slider = card.querySelector('.bid-slider');
+    const valueEl = card.querySelector('.bid-value');
+    const btn = card.querySelector('.bid-btn');
+    const status = card.querySelector('.bid-status');
+    const featuresBtn = card.querySelector('.card-features-btn');
+
+    /* Detecta la orientación real de la foto (clases is-tall/square/wide) */
+    applyImageRatio(card.querySelector('.card-img img'), card.querySelector('.card-img'));
+
+    const paint = () => {
+      const pct = ((slider.value - minBid) / (maxBid - minBid)) * 100;
+      slider.style.setProperty('--fill', pct + '%');
+      valueEl.textContent = formatter.money(slider.value);
+    };
+
+    slider.addEventListener('input', paint);
+    paint();
+
+    featuresBtn.addEventListener('click', () => openOverlay(car, i));
+    btn.addEventListener('click', () => submitBid(car, i, slider, btn, status));
+
+    return card;
+  }
+
+  function buildSelect() {
+    select.innerHTML = '<option value="">— Elige un auto del inventario —</option>';
+    cars.forEach((car, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = `Auto ${i + 1} · ${car.Marca || ''} ${car.Modelo || ''} (${car.Año || car.Anio || ''})`;
+      select.appendChild(opt);
+    });
+  }
+
+  /* ---------- Puja funcional (envía a la hoja vía Apps Script) ---------- */
+
+  async function submitBid(car, i, slider, btn, status) {
+    const puja = Number(slider.value);
+    btn.disabled = true;
+    status.className = 'bid-status loading';
+    status.textContent = 'Enviando puja…';
+
+    const payload = {
+      auto: i + 1,
+      marca: (car.Marca || '') + ' ' + (car.Modelo || ''),
+      puja: puja,
+      precio: Number(car.Precio) || 0,
+      pct: Math.round((puja / (Number(car.Precio) || 1)) * 100)
+    };
+
+    try {
+      const res = await fetch(CFG.APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      if (!data || data.ok !== true) throw new Error('Respuesta inválida');
+
+      status.className = 'bid-status ok';
+      status.textContent = `Puja de ${formatter.money(puja)} recibida. Te contactamos por WhatsApp.`;
+      showToast('Puja recibida por ' + formatter.money(puja), 'ok');
+    } catch (err) {
+      console.warn('Fallo al enviar la puja:', err);
+      status.className = 'bid-status err';
+      status.textContent = 'No se pudo enviar. Intenta de nuevo.';
+      showToast('No se pudo enviar la puja', 'err');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  /* ---------- Overlay: características a pantalla completa ---------- */
+
+  let lastClose = null;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+  overlay.id = 'carOverlay';
+  document.body.appendChild(overlay);
+
+  function openOverlay(car, i) {
+    const images = getImages(car);
+    const marca = car.Marca || 'Sin marca';
+    const modelo = car.Modelo || '';
+    const anio = car.Año || car.Anio || '—';
+    const precio = Number(car.Precio) || 0;
+    const km = car.Km || 0;
+    const ubicacion = car.Ubicación || car.Ubicacion || 'Medellín';
+    const waMsg = 'Hola AD Motors! Me interesa el ' + marca + ' ' + modelo + ' ' + anio + ' (Auto ' + (i + 1) + ').';
+    const wa = 'https://wa.me/' + CFG.WHATSAPP_NUMBER + '?text=' + encodeURIComponent(waMsg);
+    const fallback = 'onerror="this.src=\'' + CFG.DEFAULT_IMAGE + '\'"';
+
+    const thumbsHtml = images.length > 1
+      ? `<div class="gallery-thumbs" role="tablist" aria-label="Galería de imágenes">
+          ${images.map((src, idx) => `
+            <button type="button" class="gallery-thumb${idx === 0 ? ' active' : ''}" data-index="${idx}" aria-label="Ver imagen ${idx + 1}" ${idx === 0 ? 'aria-selected="true"' : ''}>
+              <img src="${src}" alt="${marca} ${modelo} — imagen ${idx + 1}" loading="lazy" decoding="async" ${fallback}>
+            </button>`).join('')}
+        </div>`
+      : '';
+
+    overlay.innerHTML = `
+      <div class="overlay-card" role="dialog" aria-modal="true" aria-label="Características de ${marca} ${modelo} ${anio}">
+        <div class="overlay-head">
+          <p class="overlay-badge">Auto ${i + 1} · ${marca} ${modelo} ${anio}</p>
+          <button class="overlay-close" type="button">
+            Cerrar
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+              <path d="M18 6L6 18M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="overlay-body">
+          <div class="gallery">
+            <div class="gallery-main">
+              <img src="${images[0]}" alt="${marca} ${modelo} ${anio}" ${fallback}>
+              <span class="gallery-counter">1 / ${images.length}</span>
+              <div class="overlay-price">${formatter.money(precio)}</div>
+            </div>
+            ${thumbsHtml}
+          </div>
+          <div class="overlay-info">
+            <div class="overlay-specs">
+              ${overlaySpec('Marca', marca)}
+              ${overlaySpec('Modelo', modelo)}
+              ${overlaySpec('Año', anio)}
+              ${overlaySpec('Precio', formatter.money(precio))}
+              ${overlaySpec('Kilómetros', formatter.number(km) + ' km')}
+              ${overlaySpec('Ubicación', ubicacion)}
+            </div>
+            <h3 class="features-title">Características del vehículo</h3>
+            <div class="features">${renderFeatures(car.features)}</div>
+            <a class="overlay-cta" href="${wa}" target="_blank" rel="noopener">Solicitar por WhatsApp</a>
+          </div>
+        </div>
+      </div>`;
+
+    /* Galería: clic en miniatura → imagen grande */
+    const mainWrap = overlay.querySelector('.gallery-main');
+    const mainImg = overlay.querySelector('.gallery-main img');
+    const counter = overlay.querySelector('.gallery-counter');
+    applyImageRatio(mainImg, mainWrap);
+    overlay.querySelectorAll('.gallery-thumb').forEach((thumb) => {
+      thumb.addEventListener('click', () => {
+        overlay.querySelectorAll('.gallery-thumb').forEach((t) => {
+          t.classList.remove('active');
+          t.removeAttribute('aria-selected');
+        });
+        thumb.classList.add('active');
+        thumb.setAttribute('aria-selected', 'true');
+        mainImg.src = images[Number(thumb.dataset.index)];
+        applyImageRatio(mainImg, mainWrap);
+        counter.textContent = (Number(thumb.dataset.index) + 1) + ' / ' + images.length;
+      });
+    });
+
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    overlay.querySelector('.overlay-close').focus();
+
+    lastClose = () => {
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+      lastClose = null;
+    };
+
+    overlay.querySelector('.overlay-close').addEventListener('click', () => lastClose && lastClose());
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay && lastClose) lastClose();
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && lastClose) lastClose();
+  });
+
+  function overlaySpec(label, value) {
+    return `<div class="overlay-spec"><span>${label}</span><strong>${value}</strong></div>`;
+  }
+
+  function renderFeatures(features) {
+    if (!features || !features.length) {
+      return '<p class="features-empty">Este auto aún no tiene características publicadas.</p>';
+    }
+    return features.map((group) => `
+      <section class="feature-group">
+        <h4 class="feature-title">${group.categoria}</h4>
+        ${group.items.map((it) => `
+          <div class="feature-item">
+            <span class="feature-name">${it.nombre}</span>
+            <span class="feature-value${featureValueClass(it.valor)}">${it.valor}</span>
+          </div>`).join('')}
+      </section>`).join('');
+  }
+
+  function featureValueClass(v) {
+    const s = String(v).toLowerCase();
+    if (s === 'sí' || s === 'si') return ' is-yes';
+    if (s === 'no') return ' is-no';
+    return '';
+  }
+
+  /* ---------- Select: desplaza a la card ---------- */
+
+  select.addEventListener('change', () => {
+    if (select.value === '') return;
+    const card = grid.children[Number(select.value)];
+    if (!card) return;
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    card.classList.add('is-highlight');
+    setTimeout(() => card.classList.remove('is-highlight'), 2000);
+  });
+
+  /* ---------- Utilidades ---------- */
+
+  function showToast(msg, kind) {
+    toast.textContent = msg;
+    toast.className = 'toast show ' + kind;
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => (toast.className = 'toast'), 3200);
+  }
+
+  document.getElementById('whatsappCta').href =
+    'https://wa.me/' + CFG.WHATSAPP_NUMBER +
+    '?text=' + encodeURIComponent(CFG.WHATSAPP_MESSAGE);
+
+  document.getElementById('footerYear').textContent = '© ' + new Date().getFullYear() + ' AD Motors';
+
+  document.getElementById('inventoryGo').addEventListener('click', () => {
+    document.getElementById('inventario').scrollIntoView({ behavior: 'smooth' });
+  });
+
+  /* ---------- Init ---------- */
+
+  init();
+})();
