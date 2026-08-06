@@ -1036,6 +1036,12 @@ button {
   transition: background 0.2s ease, transform 0.15s ease;
 }
 
+.overlay-bid {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: 14px;
+}
+
 .overlay-cta:hover {
   background: var(--whatsapp-hover);
   transform: translateY(-2px);

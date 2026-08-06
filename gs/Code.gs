@@ -74,20 +74,38 @@ function doGet() {
   }
 }
 
-/* POST: recibe una puja y la guarda en la hoja "Pujas" */
+/* POST: recibe una puja y la guarda en la hoja "Pujas".
+   Valida que la puja sea un número entre el 70% y el 100% del precio,
+   para evitar spam / datos basura en la hoja. */
 function doPost(e) {
   try {
     var body = JSON.parse(e.postData.contents);
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_PUJAS);
     if (!sheet) throw new Error('No existe la hoja "' + SHEET_PUJAS + '"');
 
+    var auto = Number(body.auto);
+    var puja = Number(body.puja);
+    var precio = Number(body.precio);
+
+    if (!isFinite(auto) || auto < 1) {
+      return json_({ ok: false, error: 'Auto inválido' });
+    }
+    if (!isFinite(precio) || precio <= 0) {
+      return json_({ ok: false, error: 'Precio inválido' });
+    }
+    if (!isFinite(puja) || puja < precio * 0.7 || puja > precio) {
+      return json_({ ok: false, error: 'Puja fuera del rango permitido (70%–100%)' });
+    }
+
+    var pct = Math.round((puja / precio) * 100);
+
     sheet.appendRow([
       new Date(),
       body.auto,
-      body.marca,
-      body.puja,
-      body.precio,
-      body.pct
+      String(body.marca || '').slice(0, 200),
+      puja,
+      precio,
+      pct
     ]);
 
     return json_({ ok: true, message: 'Puja registrada' });

@@ -20,7 +20,7 @@ const ADMOTORS_CONFIG = {
   DEFAULT_IMAGE: "https://picsum.photos/seed/admotors/800/1200",
 
   /* Porcentaje mínimo de la barra de puja sobre el valor del auto */
-  BID_MIN_PERCENT: 50,
+  BID_MIN_PERCENT: 70,
 
   /* Paso del slider en pesos colombianos */
   BID_STEP: 500000

@@ -188,10 +188,6 @@
     const km = car.Km || 0;
     const ubicacion = car.Ubicación || car.Ubicacion || 'Medellín';
 
-    const minBid = Math.round(precio * (CFG.BID_MIN_PERCENT / 100));
-    const maxBid = precio;
-    const start = minBid;
-
     card.innerHTML = `
       <div class="card-img">
         <span class="card-badge">Auto ${i + 1}</span>
@@ -217,43 +213,72 @@
       </div>
       <div class="card-location">Ubicación: ${ubicacion}</div>
       <div class="card-bid">
-        <div class="bid-head">
-          <span>Tu puja</span>
-          <strong class="bid-value">${formatter.money(start)}</strong>
-        </div>
-        <input class="bid-slider" type="range" min="${minBid}" max="${maxBid}" step="${CFG.BID_STEP}" value="${start}" aria-label="Valor de tu puja para ${marca} ${modelo}">
-        <div class="bid-labels">
-          <span>Mín. ${formatter.money(minBid)}</span>
-          <span>${CFG.BID_MIN_PERCENT}% → 100%</span>
-        </div>
+        ${bidBlockHtml(car, i)}
         <button class="card-features-btn" type="button">Ver características del carro</button>
         <button class="bid-btn" type="button">Enviar puja</button>
         <p class="bid-status" aria-live="polite"></p>
       </div>
     `;
 
-    const slider = card.querySelector('.bid-slider');
-    const valueEl = card.querySelector('.bid-value');
-    const btn = card.querySelector('.bid-btn');
-    const status = card.querySelector('.bid-status');
     const featuresBtn = card.querySelector('.card-features-btn');
 
     /* Detecta la orientación real de la foto (clases is-tall/square/wide) */
     applyImageRatio(card.querySelector('.card-img img'), card.querySelector('.card-img'));
 
+    wireBid(card, car, i);
+
+    featuresBtn.addEventListener('click', () => openOverlay(car, i));
+
+    return card;
+  }
+
+  /* ---------- Bloque de puja compartido (card + overlay) ---------- */
+
+  /* HTML del bloque: mismo slider 70% → 100% con los mismos valores */
+  function bidBlockHtml(car, i) {
+    const precio = Number(car.Precio) || 0;
+    const minBid = Math.round(precio * (CFG.BID_MIN_PERCENT / 100));
+    const maxBid = precio;
+    const start = minBid;
+    const marca = (car.Marca || '') + ' ' + (car.Modelo || '');
+    return `
+      <div class="bid-head">
+        <span>Tu puja</span>
+        <strong class="bid-value">${formatter.money(start)}</strong>
+      </div>
+      <input class="bid-slider" type="range" min="${minBid}" max="${maxBid}" step="${CFG.BID_STEP}" value="${start}" aria-label="Valor de tu puja para ${marca}">
+      <div class="bid-labels">
+        <span>Mín. ${formatter.money(minBid)}</span>
+        <span>${CFG.BID_MIN_PERCENT}% → 100%</span>
+      </div>`;
+  }
+
+  /* Conecta slider + botón + estado de puja dentro de root (card u overlay) */
+  function wireBid(root, car, i) {
+    const slider = root.querySelector('.bid-slider');
+    const valueEl = root.querySelector('.bid-value');
+    const btn = root.querySelector('.bid-btn');
+    const status = root.querySelector('.bid-status');
+    const minBid = Number(slider.min);
+    const maxBid = Number(slider.max);
+
+    /* Valor efectivo de la puja: puede ser el máximo exacto (100%),
+       aunque el slider interno quede en el último escalón por el paso fijo */
+    let bid = minBid;
+
     const paint = () => {
-      const pct = ((slider.value - minBid) / (maxBid - minBid)) * 100;
+      let v = Number(slider.value);
+      if (v >= maxBid - CFG.BID_STEP) v = maxBid;
+      bid = v;
+      const pct = maxBid > minBid ? ((v - minBid) / (maxBid - minBid)) * 100 : 100;
       slider.style.setProperty('--fill', pct + '%');
-      valueEl.textContent = formatter.money(slider.value);
+      valueEl.textContent = formatter.money(v);
     };
 
     slider.addEventListener('input', paint);
     paint();
 
-    featuresBtn.addEventListener('click', () => openOverlay(car, i));
-    btn.addEventListener('click', () => submitBid(car, i, slider, btn, status));
-
-    return card;
+    btn.addEventListener('click', () => submitBid(car, i, bid, btn, status));
   }
 
   function buildSelect() {
@@ -268,18 +293,35 @@
 
   /* ---------- Puja funcional (envía a la hoja vía Apps Script) ---------- */
 
-  async function submitBid(car, i, slider, btn, status) {
-    const puja = Number(slider.value);
+  async function submitBid(car, i, bid, btn, status) {
+    const puja = Number(bid);
+    const precio = Number(car.Precio) || 0;
+    const pct = Math.round((puja / (precio || 1)) * 100);
+    const marca = (car.Marca || '') + ' ' + (car.Modelo || '');
+    const anio = car.Año || car.Anio || '—';
+    const km = car.Km || 0;
+    const ubicacion = car.Ubicación || car.Ubicacion || 'Medellín';
+
+    /* Abre WhatsApp del vendedor con el resumen de la puja en el mismo clic
+       (así el navegador no bloquea la ventana), para contactar al cliente. */
+    const waMsg =
+      'Hola AD Motors! Quiero hacer una puja por el ' + marca + ' ' + anio + ' (Auto ' + (i + 1) + ').\n\n' +
+      'Puja: ' + formatter.money(puja) + ' (' + pct + '% del precio)\n' +
+      'Precio: ' + formatter.money(precio) + '\n' +
+      'Kilómetros: ' + formatter.number(km) + ' km\n' +
+      'Ubicación: ' + ubicacion;
+    window.open('https://wa.me/' + CFG.WHATSAPP_NUMBER + '?text=' + encodeURIComponent(waMsg), '_blank');
+
     btn.disabled = true;
     status.className = 'bid-status loading';
     status.textContent = 'Enviando puja…';
 
     const payload = {
       auto: i + 1,
-      marca: (car.Marca || '') + ' ' + (car.Modelo || ''),
+      marca: marca,
       puja: puja,
-      precio: Number(car.Precio) || 0,
-      pct: Math.round((puja / (Number(car.Precio) || 1)) * 100)
+      precio: precio,
+      pct: pct
     };
 
     try {
@@ -293,7 +335,7 @@
       if (!data || data.ok !== true) throw new Error('Respuesta inválida');
 
       status.className = 'bid-status ok';
-      status.textContent = `Puja de ${formatter.money(puja)} recibida. Te contactamos por WhatsApp.`;
+      status.textContent = `Puja de ${formatter.money(puja)} recibida. Confírmala en WhatsApp para que te contactemos.`;
       showToast('Puja recibida por ' + formatter.money(puja), 'ok');
     } catch (err) {
       console.warn('Fallo al enviar la puja:', err);
@@ -366,6 +408,11 @@
             </div>
             <h3 class="features-title">Características del vehículo</h3>
             <div class="features">${renderFeatures(car.features)}</div>
+            <div class="card-bid overlay-bid">
+              ${bidBlockHtml(car, i)}
+              <button class="bid-btn" type="button">Enviar puja</button>
+              <p class="bid-status" aria-live="polite"></p>
+            </div>
             <a class="overlay-cta" href="${wa}" target="_blank" rel="noopener">Solicitar por WhatsApp</a>
           </div>
         </div>
@@ -389,6 +436,9 @@
         counter.textContent = (Number(thumb.dataset.index) + 1) + ' / ' + images.length;
       });
     });
+
+    /* Slider de puja del overlay: mismos valores 70% → 100% y mismo envío */
+    wireBid(overlay.querySelector('.overlay-bid'), car, i);
 
     overlay.classList.add('open');
     document.body.style.overflow = 'hidden';
