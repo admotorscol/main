@@ -23,5 +23,9 @@ const ADMOTORS_CONFIG = {
   BID_MIN_PERCENT: 70,
 
   /* Paso del slider en pesos colombianos */
-  BID_STEP: 500000
+  BID_STEP: 100000,
+
+  /* URL completa de tu video de YouTube del modal "Cómo funciona"
+     Ej: https://www.youtube.com/watch?v=VIDEO_ID o https://youtu.be/VIDEO_ID */
+  YOUTUBE_URL: "https://www.youtube.com/watch?v=RQ1YwgMtaGo"
 };

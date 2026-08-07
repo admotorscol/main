@@ -35,7 +35,7 @@
           <ul>
             <li><a href="#" class="active">Inicio</a></li>
             <li><a href="#inventario">Inventario</a></li>
-            <li><a href="#">Cómo funciona</a></li>
+            <li><a href="#" id="comoFuncionaLink">Cómo funciona</a></li>
             <li><a href="#">Testimonios</a></li>
             <li><a href="#contacto">Contacto</a></li>
           </ul>
@@ -118,6 +118,7 @@
 
   <main>
     <section class="inventory" id="inventario" aria-labelledby="inventario-title">
+      <img class="inventory-logo" src="img/logo.png" alt="Logo de AD Motors" width="150" height="150">
       <div class="inventory-head">
         <h2 class="inventory-title" id="inventario-title">Nuestro inventario</h2>
         <p class="inventory-sub" id="inventoryCount">Cargando autos…</p>
@@ -126,7 +127,7 @@
     </section>
   </main>
 
-  <footer class="footer">
+  <footer class="footer" id="contacto">
     <div class="footer-grid">
       <div class="footer-col footer-brand">
         <p class="footer-logo">AD<span>Motors</span></p>
@@ -203,6 +204,20 @@
   </footer>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- MODAL DE VIDEO (Cómo funciona) -->
+  <div class="modal" id="videoModal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-label="Cómo funciona AD Motors">
+      <button class="modal-close" type="button" aria-label="Cerrar video">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+          <path d="M18 6L6 18M6 6l12 12"></path>
+        </svg>
+      </button>
+      <div class="modal-video">
+        <iframe src="" title="Video de cómo funciona AD Motors" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+      </div>
+    </div>
+  </div>
 
   <script src="js/config.js"></script>
   <script src="js/main.js"></script>

@@ -1,12 +1,12 @@
 :root {
-  --bg: #171717;
+  --bg: #131313;
   --bg-soft: #18181b;
   --card: #27272a;
   --card-2: #3f3f46;
   --border: #52525b;
   --text: #fafafa;
   --text-dim: #a1a1aa;
-  --accent: #e11d48;
+  --accent: #c22446;
   --accent-hover: #dc2626;
   --whatsapp: #25d366;
   --whatsapp-hover: #3ee07a;
@@ -384,6 +384,14 @@ button {
   padding: 56px clamp(16px, 4vw, 64px) 80px;
 }
 
+.inventory-logo {
+  display: block;
+  width: 150px;
+  height: 150px;
+  margin: 0 auto 14px;
+  object-fit: contain;
+}
+
 .inventory-head {
   display: flex;
   flex-wrap: wrap;
@@ -666,8 +674,8 @@ button {
   width: 100%;
   padding: 12px;
   border-radius: 12px;
-  background: var(--accent);
-  color: #fff;
+  background: var(--whatsapp);
+  color: #06251a;
   font-weight: 800;
   font-size: 0.95rem;
   letter-spacing: 0.02em;
@@ -692,7 +700,7 @@ button {
 }
 
 .bid-btn:hover {
-  background: var(--accent-hover);
+  background: var(--whatsapp-hover);
 }
 
 .bid-btn:active {
@@ -721,6 +729,84 @@ button {
 
 .bid-status.loading {
   color: var(--text-dim);
+}
+
+/* ============ MODAL TESTIMONIOS ============ */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(10, 10, 10, 0.88);
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.modal.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-card {
+  position: relative;
+  width: min(880px, 100%);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 14px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+}
+
+.modal-close {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.modal-close:hover {
+  background: var(--card-2);
+  transform: rotate(90deg);
+}
+
+.modal-video {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+}
+
+.modal-video iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+@media (max-width: 600px) {
+  .modal-close {
+    top: -10px;
+    right: -10px;
+    width: 36px;
+    height: 36px;
+  }
 }
 
 /* ============ OVERLAY CARACTERÍSTICAS ============ */
@@ -1021,30 +1107,10 @@ button {
   text-align: center;
 }
 
-.overlay-cta {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 9px;
-  width: 100%;
-  padding: 15px;
-  border-radius: 12px;
-  background: var(--whatsapp);
-  color: #06251a;
-  font-weight: 800;
-  font-size: 1rem;
-  transition: background 0.2s ease, transform 0.15s ease;
-}
-
 .overlay-bid {
   border: 1px solid var(--border);
   border-radius: 14px;
   margin-bottom: 14px;
-}
-
-.overlay-cta:hover {
-  background: var(--whatsapp-hover);
-  transform: translateY(-2px);
 }
 
 @media (max-width: 900px) {

@@ -215,7 +215,7 @@
       <div class="card-bid">
         ${bidBlockHtml(car, i)}
         <button class="card-features-btn" type="button">Ver características del carro</button>
-        <button class="bid-btn" type="button">Enviar puja</button>
+        <button class="bid-btn" type="button">Enviar oferta por WhatsApp</button>
         <p class="bid-status" aria-live="polite"></p>
       </div>
     `;
@@ -234,19 +234,20 @@
 
   /* ---------- Bloque de puja compartido (card + overlay) ---------- */
 
-  /* HTML del bloque: mismo slider 70% → 100% con los mismos valores */
+  /* HTML del bloque: mismo slider 70% → 100% con los mismos valores.
+     El valor por defecto siempre es el 100% del precio. */
   function bidBlockHtml(car, i) {
     const precio = Number(car.Precio) || 0;
     const minBid = Math.round(precio * (CFG.BID_MIN_PERCENT / 100));
     const maxBid = precio;
-    const start = minBid;
+    const start = maxBid;
     const marca = (car.Marca || '') + ' ' + (car.Modelo || '');
     return `
       <div class="bid-head">
-        <span>Tu puja</span>
+        <span>Tu oferta</span>
         <strong class="bid-value">${formatter.money(start)}</strong>
       </div>
-      <input class="bid-slider" type="range" min="${minBid}" max="${maxBid}" step="${CFG.BID_STEP}" value="${start}" aria-label="Valor de tu puja para ${marca}">
+      <input class="bid-slider" type="range" min="${minBid}" max="${maxBid}" step="${CFG.BID_STEP}" value="${start}" aria-label="Valor de tu oferta para ${marca}">
       <div class="bid-labels">
         <span>Mín. ${formatter.money(minBid)}</span>
         <span>${CFG.BID_MIN_PERCENT}% → 100%</span>
@@ -264,7 +265,7 @@
 
     /* Valor efectivo de la puja: puede ser el máximo exacto (100%),
        aunque el slider interno quede en el último escalón por el paso fijo */
-    let bid = minBid;
+    let bid = maxBid;
 
     const paint = () => {
       let v = Number(slider.value);
@@ -305,8 +306,8 @@
     /* Abre WhatsApp del vendedor con el resumen de la puja en el mismo clic
        (así el navegador no bloquea la ventana), para contactar al cliente. */
     const waMsg =
-      'Hola AD Motors! Quiero hacer una puja por el ' + marca + ' ' + anio + ' (Auto ' + (i + 1) + ').\n\n' +
-      'Puja: ' + formatter.money(puja) + ' (' + pct + '% del precio)\n' +
+      'Hola AD Motors! Quiero hacer una oferta por el ' + marca + ' ' + anio + ' (Auto ' + (i + 1) + ').\n\n' +
+      'Oferta: ' + formatter.money(puja) + ' (' + pct + '% del precio)\n' +
       'Precio: ' + formatter.money(precio) + '\n' +
       'Kilómetros: ' + formatter.number(km) + ' km\n' +
       'Ubicación: ' + ubicacion;
@@ -314,7 +315,7 @@
 
     btn.disabled = true;
     status.className = 'bid-status loading';
-    status.textContent = 'Enviando puja…';
+    status.textContent = 'Enviando oferta…';
 
     const payload = {
       auto: i + 1,
@@ -335,13 +336,13 @@
       if (!data || data.ok !== true) throw new Error('Respuesta inválida');
 
       status.className = 'bid-status ok';
-      status.textContent = `Puja de ${formatter.money(puja)} recibida. Confírmala en WhatsApp para que te contactemos.`;
-      showToast('Puja recibida por ' + formatter.money(puja), 'ok');
+      status.textContent = `Oferta de ${formatter.money(puja)} recibida. Confírmala en WhatsApp para que te contactemos.`;
+      showToast('Oferta recibida por ' + formatter.money(puja), 'ok');
     } catch (err) {
-      console.warn('Fallo al enviar la puja:', err);
+      console.warn('Fallo al enviar la oferta:', err);
       status.className = 'bid-status err';
       status.textContent = 'No se pudo enviar. Intenta de nuevo.';
-      showToast('No se pudo enviar la puja', 'err');
+      showToast('No se pudo enviar la oferta', 'err');
     } finally {
       btn.disabled = false;
     }
@@ -364,8 +365,6 @@
     const precio = Number(car.Precio) || 0;
     const km = car.Km || 0;
     const ubicacion = car.Ubicación || car.Ubicacion || 'Medellín';
-    const waMsg = 'Hola AD Motors! Me interesa el ' + marca + ' ' + modelo + ' ' + anio + ' (Auto ' + (i + 1) + ').';
-    const wa = 'https://wa.me/' + CFG.WHATSAPP_NUMBER + '?text=' + encodeURIComponent(waMsg);
     const fallback = 'onerror="this.src=\'' + CFG.DEFAULT_IMAGE + '\'"';
 
     const thumbsHtml = images.length > 1
@@ -410,10 +409,9 @@
             <div class="features">${renderFeatures(car.features)}</div>
             <div class="card-bid overlay-bid">
               ${bidBlockHtml(car, i)}
-              <button class="bid-btn" type="button">Enviar puja</button>
+              <button class="bid-btn" type="button">Enviar oferta por WhatsApp</button>
               <p class="bid-status" aria-live="polite"></p>
             </div>
-            <a class="overlay-cta" href="${wa}" target="_blank" rel="noopener">Solicitar por WhatsApp</a>
           </div>
         </div>
       </div>`;
@@ -457,7 +455,12 @@
   }
 
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && lastClose) lastClose();
+    if (e.key !== 'Escape') return;
+    if (modal.classList.contains('open')) {
+      closeModal();
+      return;
+    }
+    if (lastClose) lastClose();
   });
 
   function overlaySpec(label, value) {
@@ -485,6 +488,43 @@
     if (s === 'no') return ' is-no';
     return '';
   }
+
+  /* ---------- Modal de video (Cómo funciona) ---------- */
+
+  const modal = document.getElementById('videoModal');
+  const modalIframe = modal.querySelector('iframe');
+
+  /* Extrae el ID del video de la URL completa (watch?v=, youtu.be, embed, shorts) */
+  function youtubeIdFromUrl(url) {
+    const m = String(url || '').match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+    return m ? m[1] : '';
+  }
+
+  function openModal() {
+    const id = youtubeIdFromUrl(CFG.YOUTUBE_URL);
+    if (!id) return;
+    modalIframe.src = 'https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&rel=0';
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal() {
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+    modalIframe.src = '';
+    document.body.style.overflow = '';
+  }
+
+  document.getElementById('comoFuncionaLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    openModal();
+  });
+
+  modal.querySelector('.modal-close').addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
 
   /* ---------- Select: desplaza a la card ---------- */
 

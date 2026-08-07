@@ -1,0 +1,32 @@
+Auto	Categoria	Caracteristica	Valor
+1	Características del producto	Línea	
+1	Características del producto	Color	
+1	Características del producto	Tipo de combustible	
+1	Características del producto	Motor	
+1	Características del producto	Puertas	
+1	Características del producto	Transmisión	
+1	Características del producto	Tipo de carrocería	
+1	Características del producto	Con cámara de reversa	
+1	Características del producto	Línea	
+1	Seguridad	Frenos ABS	
+1	Seguridad	Airbag conductor	
+1	Seguridad	Airbag para conductor y pasajero	
+1	Seguridad	Sensor de parqueo	
+1	Seguridad	Control de estabilidad	
+1	Seguridad	Cierre centralizado de puertas	
+1	Condiciones de compra	Con garantía mecánica	
+1	Condiciones de compra	Con precio negociable	
+1	Condiciones de compra	Venpermuta	
+1	Condiciones de compra	Dueños	
+1	Condiciones de compra	Reclamaciones	
+1	Condiciones de compra	SOAt	
+1	Condiciones de compra	Revisión Técnicomecánica	
+1	Condiciones de compra	Impuestos	
+1	Confort y conveniencia	Aire acondicionado	
+1	Confort y conveniencia	Vidrios eléctricos	
+1	Confort y conveniencia	Computadora de abordo	
+1	Confort y conveniencia	Bluetooth	
+1	Confort y conveniencia	Porta vasos	
+1	Rendimiento y dimensiones	Capacidad de personas	
+1	Rendimiento y dimensiones	Potencia	
+1	Rendimiento y dimensiones	Capacidad del tanque	
