@@ -234,17 +234,23 @@
 
   /* ---------- Bloque de puja compartido (card + overlay) ---------- */
 
+  /* Estado y UIs de los sliders por auto (índice): sincronizan card ↔ overlay */
+  const bidSync = {
+    state: new Map(), // i -> valor efectivo de la oferta
+    uis: new Map()    // i -> [{ slider, valueEl, paint }]
+  };
+
   /* HTML del bloque: mismo slider 70% → 100% con los mismos valores.
-     El valor por defecto siempre es el 100% del precio. */
+     El valor por defecto es el 90% del precio. */
   function bidBlockHtml(car, i) {
     const precio = Number(car.Precio) || 0;
     const minBid = Math.round(precio * (CFG.BID_MIN_PERCENT / 100));
     const maxBid = precio;
-    const start = maxBid;
+    const start = Math.round(precio * (CFG.BID_DEFAULT_PERCENT / 100));
     const marca = (car.Marca || '') + ' ' + (car.Modelo || '');
     return `
       <div class="bid-head">
-        <span>Tu oferta</span>
+        <span>Mi oferta es:</span>
         <strong class="bid-value">${formatter.money(start)}</strong>
       </div>
       <input class="bid-slider" type="range" min="${minBid}" max="${maxBid}" step="${CFG.BID_STEP}" value="${start}" aria-label="Valor de tu oferta para ${marca}">
@@ -254,7 +260,15 @@
       </div>`;
   }
 
-  /* Conecta slider + botón + estado de puja dentro de root (card u overlay) */
+  /* Aplica el estado compartido a todas las UIs del auto i (card + overlay) */
+  function syncBidCar(i) {
+    const v = bidSync.state.get(i);
+    if (v === undefined) return;
+    (bidSync.uis.get(i) || []).forEach((ui) => ui.paint(v));
+  }
+
+  /* Conecta slider + botón + estado dentro de root (card u overlay).
+     Ambos sliders del mismo auto comparten el mismo valor y se sincronizan. */
   function wireBid(root, car, i) {
     const slider = root.querySelector('.bid-slider');
     const valueEl = root.querySelector('.bid-value');
@@ -263,23 +277,36 @@
     const minBid = Number(slider.min);
     const maxBid = Number(slider.max);
 
-    /* Valor efectivo de la puja: puede ser el máximo exacto (100%),
-       aunque el slider interno quede en el último escalón por el paso fijo */
-    let bid = maxBid;
+    if (!bidSync.state.has(i)) {
+      bidSync.state.set(i, Math.round(maxBid * (CFG.BID_DEFAULT_PERCENT / 100)));
+    }
 
-    const paint = () => {
-      let v = Number(slider.value);
-      if (v >= maxBid - CFG.BID_STEP) v = maxBid;
-      bid = v;
-      const pct = maxBid > minBid ? ((v - minBid) / (maxBid - minBid)) * 100 : 100;
-      slider.style.setProperty('--fill', pct + '%');
-      valueEl.textContent = formatter.money(v);
+    const ui = {
+      slider,
+      valueEl,
+      paint: (v) => {
+        slider.value = String(v);
+        const pct = maxBid > minBid ? ((v - minBid) / (maxBid - minBid)) * 100 : 100;
+        slider.style.setProperty('--fill', pct + '%');
+        valueEl.textContent = formatter.money(v);
+      }
     };
+    const uis = bidSync.uis.get(i) || [];
+    uis.push(ui);
+    bidSync.uis.set(i, uis);
 
-    slider.addEventListener('input', paint);
-    paint();
+    slider.addEventListener('input', () => {
+      let v = Number(slider.value);
+      /* Con paso fijo el último escalón puede quedar debajo del precio:
+         al llegar ahí, se fija el valor exacto del 100% */
+      if (v >= maxBid - CFG.BID_STEP) v = maxBid;
+      bidSync.state.set(i, v);
+      syncBidCar(i);
+    });
 
-    btn.addEventListener('click', () => submitBid(car, i, bid, btn, status));
+    btn.addEventListener('click', () => submitBid(car, i, bidSync.state.get(i), btn, status));
+
+    syncBidCar(i);
   }
 
   function buildSelect() {

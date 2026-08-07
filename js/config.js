@@ -22,6 +22,9 @@ const ADMOTORS_CONFIG = {
   /* Porcentaje mínimo de la barra de puja sobre el valor del auto */
   BID_MIN_PERCENT: 70,
 
+  /* Valor por defecto del slider (porcentaje del precio): 90% */
+  BID_DEFAULT_PERCENT: 90,
+
   /* Paso del slider en pesos colombianos */
   BID_STEP: 100000,
 
