@@ -1,5 +1,0 @@
-- https://admotors.shop/
-- https://dashboard.uptimerobot.com/monitors/803680805
-- https://www.githubstatus.com/
-- https://github.com/admotorscol/main
-- 
