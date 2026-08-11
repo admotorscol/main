@@ -10,8 +10,8 @@ const ADMOTORS_CONFIG = {
   APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxgoKHr8Qul4TRnquTsGLJLbzeQ1FCm6zVUhRzQ7fLba3wXoh9wVgRLfGnO5BMx1nJ7/exec",
 
   /* Número de WhatsApp del botón CTA (solo dígitos, con código de país).
-     Ej: +57 311 2656085  ->  573112656085 */
-  WHATSAPP_NUMBER: "573112656085",
+     Ej: +57 3229480996  ->  573229480996 */
+  WHATSAPP_NUMBER: "573229480996",
 
   /* Mensaje predefinido para el botón de WhatsApp */
   WHATSAPP_MESSAGE: "Hola AD Motors! Quiero información sobre un auto de su inventario.",
