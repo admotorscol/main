@@ -9,11 +9,15 @@ En [sheets.new](https://sheets.new) crea una hoja de cálculo.
 
 ### Hoja 1: `Autos` (una fila por carro, 9 carros)
 
-| Marca      | Modelo   | Año  | Precio       | Km    | Ubicación | Imagen               | Imagen 2            | Imagen 3            |
-| ---------- | -------- | ---- | ------------ | ----- | --------- | -------------------- | ------------------- | ------------------- |
-| Renault    | Duster   | 2021 | 86000000     | 32500 | Medellín  | https://.../1.jpg    | https://.../2.jpg   | https://.../3.jpg   |
-| Chevrolet  | Onix     | 2020 | 58900000     | 41000 | Medellín  | https://.../1.jpg    |                     |                     |
-| ...        | ...      | ...  | ...          | ...   | ...       | ...                  | ...                 | ...                 |
+| Vendido   | Marca      | Modelo   | Año  | Precio       | Km    | Ubicación | Imagen               | Imagen 2            | Imagen 3            |
+| --------- | ---------- | -------- | ---- | ------------ | ----- | --------- | -------------------- | ------------------- | ------------------- |
+|           | Renault    | Duster   | 2021 | 86000000     | 32500 | Medellín  | https://.../1.jpg    | https://.../2.jpg   | https://.../3.jpg   |
+| Vendido   | Chevrolet  | Onix     | 2020 | 58900000     | 41000 | Medellín  | https://.../1.jpg    |                     |                     |
+| ...       | ...        | ...      | ...  | ...          | ...   | ...       | ...                  | ...                 | ...                 |
+
+- `Vendido` (primera columna): escribe cualquier texto (ej. `Vendido`) para
+  marcar el carro como vendido; el sitio lo muestra con la etiqueta "Vendido",
+  la foto en gris y sin el botón de oferta. Déjala en blanco si está disponible.
 
 - `Imagen`: URL pública de la imagen principal del auto (se usa en la card del
   inventario). Orientación vertical recomendada (9:16) para las cards.

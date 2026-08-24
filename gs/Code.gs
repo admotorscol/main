@@ -3,8 +3,10 @@
    ------------------------------------------------------------
    1. Crea una hoja de cálculo en Google Sheets
    2. Hoja "Autos" con encabezados:
-        Marca | Modelo | Año | Precio | Km | Ubicación | Imagen
+        Vendido | Marca | Modelo | Año | Precio | Km | Ubicación | Imagen
       (Imagen = URL pública del auto, orientación vertical 9:16)
+      (Vendido = cola primera columna; escribe cualquier texto, ej. "Vendido",
+       para marcar el auto como vendido. Déjala en blanco si está disponible)
    3. Hoja "Pujas" con encabezados:
         Fecha | Auto | Marca/Modelo | Puja | Precio | % del valor
    4. Extras > Apps Script > pega este código > Guarda
@@ -29,12 +31,17 @@ function doGet() {
     var cars = [];
 
     values.forEach(function (row, i) {
-      if (!row[0]) return;
+      /* Fila vacía: no hay Marca (columna después de "Vendido") => omitir. */
+      var marcaIdx = headers.indexOf('Marca');
+      if (marcaIdx < 0 || !row[marcaIdx]) return;
+
       var car = {};
       headers.forEach(function (h, j) {
         car[h] = row[j];
       });
       car.id = i + 1;
+      /* Primera columna = "Vendido": cualquier carácter => vendido. */
+      car.vendido = String(row[0] || '').trim() !== '';
       car.features = [];
 
       /* Todas las columnas "Imagen", "Imagen 2", "Imagen 3", ... como galería.

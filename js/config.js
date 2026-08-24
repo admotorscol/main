@@ -7,7 +7,7 @@ const ADMOTORS_CONFIG = {
 
   /* URL de tu Web App de Google Apps Script (Code.gs + README en /gs).
      Formato: https://script.google.com/macros/s/XXXXX/exec */
-  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxgoKHr8Qul4TRnquTsGLJLbzeQ1FCm6zVUhRzQ7fLba3wXoh9wVgRLfGnO5BMx1nJ7/exec",
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycby5tYXXf57aAybcOeVJ5goDyNqgUNteUEVBdzuKjLa3CEOiU5lRapfpw7qx_tCetiYZ/exec",
 
   /* Número de WhatsApp del botón CTA (solo dígitos, con código de país).
      Ej: +57 3229480996  ->  573229480996 */

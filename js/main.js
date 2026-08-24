@@ -194,8 +194,9 @@
   }
 
   function buildCard(car) {
+    const sold = !!car.vendido;
     const card = document.createElement('article');
-    card.className = 'card';
+    card.className = 'card' + (sold ? ' is-sold' : '');
     card.dataset.id = car.id;
 
     const images = getImages(car);
@@ -210,6 +211,7 @@
     card.innerHTML = `
       <div class="card-img">
         <span class="card-badge">Auto ${car.id}</span>
+        ${sold ? '<span class="sold-stamp" aria-hidden="true">Vendido</span>' : ''}
         <img src="${img}" alt="${marca} ${modelo} ${anio}" loading="eager" decoding="async" fetchpriority="high" onerror="this.src='${CFG.DEFAULT_IMAGE}'">
       </div>
       <div class="card-specs">
@@ -232,9 +234,9 @@
       </div>
       <div class="card-location">Ubicación: ${ubicacion}</div>
       <div class="card-bid">
-              ${bidBlockHtml(car)}
+        ${sold ? '' : bidBlockHtml(car)}
         <button class="card-features-btn" type="button">Ver características del carro</button>
-        <button class="bid-btn" type="button">Enviar oferta por WhatsApp</button>
+        ${sold ? '' : '<button class="bid-btn" type="button">Enviar oferta por WhatsApp</button>'}
         <p class="bid-status" aria-live="polite"></p>
       </div>
     `;
@@ -244,7 +246,9 @@
     /* Detecta la orientación real de la foto (clases is-tall/square/wide) */
     applyImageRatio(card.querySelector('.card-img img'), card.querySelector('.card-img'));
 
-    wireBid(card, car, car.id);
+    if (!sold) {
+      wireBid(card, car, car.id);
+    }
 
     featuresBtn.addEventListener('click', () => openOverlay(car));
 
@@ -404,6 +408,7 @@
   document.body.appendChild(overlay);
 
   function openOverlay(car) {
+    const sold = !!car.vendido;
     const images = getImages(car);
     const marca = car.Marca || 'Sin marca';
     const modelo = car.Modelo || '';
@@ -412,6 +417,14 @@
     const km = car.Km || 0;
     const ubicacion = car.Ubicación || car.Ubicacion || 'Medellín';
     const fallback = 'onerror="this.src=\'' + CFG.DEFAULT_IMAGE + '\'"';
+
+    const bidHtml = sold
+      ? '<div class="card-bid overlay-bid"><span class="overlay-sold-label">Vendido</span></div>'
+      : `<div class="card-bid overlay-bid">
+           ${bidBlockHtml(car)}
+           <button class="bid-btn" type="button">Enviar oferta por WhatsApp</button>
+           <p class="bid-status" aria-live="polite"></p>
+         </div>`;
 
     const thumbsHtml = images.length > 1
       ? `<div class="gallery-thumbs" role="tablist" aria-label="Galería de imágenes">
@@ -423,7 +436,7 @@
       : '';
 
     overlay.innerHTML = `
-      <div class="overlay-card" role="dialog" aria-modal="true" aria-label="Características de ${marca} ${modelo} ${anio}">
+      <div class="overlay-card${sold ? ' is-sold' : ''}" role="dialog" aria-modal="true" aria-label="Características de ${marca} ${modelo} ${anio}">
         <div class="overlay-head">
           <p class="overlay-badge">Auto ${car.id} · ${marca} ${modelo} ${anio}</p>
           <button class="overlay-close" type="button">
@@ -453,11 +466,7 @@
             </div>
             <h3 class="features-title">Características del vehículo</h3>
             <div class="features">${renderFeatures(car.features)}</div>
-            <div class="card-bid overlay-bid">
-        ${bidBlockHtml(car)}
-              <button class="bid-btn" type="button">Enviar oferta por WhatsApp</button>
-              <p class="bid-status" aria-live="polite"></p>
-            </div>
+            ${bidHtml}
           </div>
         </div>
       </div>`;
@@ -482,7 +491,9 @@
     });
 
     /* Slider de puja del overlay: mismos valores 70% → 100% y mismo envío */
-    wireBid(overlay.querySelector('.overlay-bid'), car, car.id);
+    if (!sold) {
+      wireBid(overlay.querySelector('.overlay-bid'), car, car.id);
+    }
 
     overlay.classList.add('open');
     document.body.style.overflow = 'hidden';
