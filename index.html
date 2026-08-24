@@ -120,8 +120,19 @@
     <section class="inventory" id="inventario" aria-labelledby="inventario-title">
       <img class="inventory-logo" src="img/logo.png" alt="Logo de AD Motors" width="150" height="150">
       <div class="inventory-head">
-        <h2 class="inventory-title" id="inventario-title">Nuestro inventario</h2>
-        <p class="inventory-sub" id="inventoryCount">Cargando autos…</p>
+        <div class="inventory-head-left">
+          <h2 class="inventory-title" id="inventario-title">Nuestro inventario</h2>
+          <p class="inventory-sub" id="inventoryCount">Cargando autos…</p>
+        </div>
+        <div class="inventory-sort">
+          <label class="visually-hidden" for="sortSelect">Ordenar inventario</label>
+          <select id="sortSelect" aria-label="Ordenar inventario">
+            <option value="recientes" selected>Más recientes</option>
+            <option value="antiguos">Más antiguos</option>
+            <option value="precio-asc">Precio: menor a mayor</option>
+            <option value="precio-desc">Precio: mayor a menor</option>
+          </select>
+        </div>
       </div>
       <div class="cards-grid" id="cardsGrid"></div>
     </section>

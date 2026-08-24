@@ -11,6 +11,7 @@
   const select = document.getElementById('carSelect');
   const countEl = document.getElementById('inventoryCount');
   const toast = document.getElementById('toast');
+  const sortSelect = document.getElementById('sortSelect');
 
   /* Caché local del inventario (30 min): las visitas se sirven al instante
      mientras Apps Script arranca en frío (cold start de Google). */
@@ -88,6 +89,7 @@
   }
 
   let cars = [];
+  let sortMode = 'recientes';
 
   /* ---------- Carga de datos ---------- */
 
@@ -153,11 +155,29 @@
     renderCars(fresh);
   }
 
+  /* ---------- Orden ---------- */
+
+  /* Comparadores por modo de orden. La antigüedad se infiere del orden de filas
+     en Google Sheets (car.id = nº de fila); el precio se lee de la columna Precio. */
+  const sortComparators = {
+    recientes: (a, b) => (b.id || 0) - (a.id || 0),
+    antiguos: (a, b) => (a.id || 0) - (b.id || 0),
+    'precio-asc': (a, b) => (Number(a.Precio) || 0) - (Number(b.Precio) || 0),
+    'precio-desc': (a, b) => (Number(b.Precio) || 0) - (Number(a.Precio) || 0)
+  };
+
+  /* Devuelve una copia ordenada (no muta la lista maestra `cars`). */
+  function sortedCars() {
+    const cmp = sortComparators[sortMode];
+    return cmp ? cars.slice().sort(cmp) : cars.slice();
+  }
+
   /* ---------- Render ---------- */
 
   function renderCars(list) {
     cars = list;
     grid.innerHTML = '';
+    bidSync.uis.clear();
 
     if (!cars.length) {
       countEl.textContent = 'Sin autos disponibles por ahora';
@@ -165,19 +185,18 @@
       return;
     }
 
-    cars.forEach((car, i) => {
-      const card = buildCard(car, i);
-      grid.appendChild(card);
+    sortedCars().forEach((car) => {
+      grid.appendChild(buildCard(car));
     });
 
     countEl.textContent = cars.length + ' autos disponibles';
     buildSelect();
   }
 
-  function buildCard(car, i) {
+  function buildCard(car) {
     const card = document.createElement('article');
     card.className = 'card';
-    card.dataset.id = i;
+    card.dataset.id = car.id;
 
     const images = getImages(car);
     const img = images[0];
@@ -190,7 +209,7 @@
 
     card.innerHTML = `
       <div class="card-img">
-        <span class="card-badge">Auto ${i + 1}</span>
+        <span class="card-badge">Auto ${car.id}</span>
         <img src="${img}" alt="${marca} ${modelo} ${anio}" loading="eager" decoding="async" fetchpriority="high" onerror="this.src='${CFG.DEFAULT_IMAGE}'">
       </div>
       <div class="card-specs">
@@ -213,7 +232,7 @@
       </div>
       <div class="card-location">Ubicación: ${ubicacion}</div>
       <div class="card-bid">
-        ${bidBlockHtml(car, i)}
+              ${bidBlockHtml(car)}
         <button class="card-features-btn" type="button">Ver características del carro</button>
         <button class="bid-btn" type="button">Enviar oferta por WhatsApp</button>
         <p class="bid-status" aria-live="polite"></p>
@@ -225,9 +244,9 @@
     /* Detecta la orientación real de la foto (clases is-tall/square/wide) */
     applyImageRatio(card.querySelector('.card-img img'), card.querySelector('.card-img'));
 
-    wireBid(card, car, i);
+    wireBid(card, car, car.id);
 
-    featuresBtn.addEventListener('click', () => openOverlay(car, i));
+    featuresBtn.addEventListener('click', () => openOverlay(car));
 
     return card;
   }
@@ -236,13 +255,13 @@
 
   /* Estado y UIs de los sliders por auto (índice): sincronizan card ↔ overlay */
   const bidSync = {
-    state: new Map(), // i -> valor efectivo de la oferta
-    uis: new Map()    // i -> [{ slider, valueEl, paint }]
+    state: new Map(), // id -> valor efectivo de la oferta
+    uis: new Map()    // id -> [{ slider, valueEl, paint }]
   };
 
   /* HTML del bloque: mismo slider 70% → 100% con los mismos valores.
      El valor por defecto es el 90% del precio. */
-  function bidBlockHtml(car, i) {
+  function bidBlockHtml(car) {
     const precio = Number(car.Precio) || 0;
     const minBid = Math.round(precio * (CFG.BID_MIN_PERCENT / 100));
     const maxBid = precio;
@@ -260,16 +279,16 @@
       </div>`;
   }
 
-  /* Aplica el estado compartido a todas las UIs del auto i (card + overlay) */
-  function syncBidCar(i) {
-    const v = bidSync.state.get(i);
+  /* Aplica el estado compartido a todas las UIs del auto id (card + overlay) */
+  function syncBidCar(id) {
+    const v = bidSync.state.get(id);
     if (v === undefined) return;
-    (bidSync.uis.get(i) || []).forEach((ui) => ui.paint(v));
+    (bidSync.uis.get(id) || []).forEach((ui) => ui.paint(v));
   }
 
   /* Conecta slider + botón + estado dentro de root (card u overlay).
      Ambos sliders del mismo auto comparten el mismo valor y se sincronizan. */
-  function wireBid(root, car, i) {
+  function wireBid(root, car, id) {
     const slider = root.querySelector('.bid-slider');
     const valueEl = root.querySelector('.bid-value');
     const btn = root.querySelector('.bid-btn');
@@ -277,8 +296,8 @@
     const minBid = Number(slider.min);
     const maxBid = Number(slider.max);
 
-    if (!bidSync.state.has(i)) {
-      bidSync.state.set(i, Math.round(maxBid * (CFG.BID_DEFAULT_PERCENT / 100)));
+    if (!bidSync.state.has(id)) {
+      bidSync.state.set(id, Math.round(maxBid * (CFG.BID_DEFAULT_PERCENT / 100)));
     }
 
     const ui = {
@@ -291,37 +310,37 @@
         valueEl.textContent = formatter.money(v);
       }
     };
-    const uis = bidSync.uis.get(i) || [];
+    const uis = bidSync.uis.get(id) || [];
     uis.push(ui);
-    bidSync.uis.set(i, uis);
+    bidSync.uis.set(id, uis);
 
     slider.addEventListener('input', () => {
       let v = Number(slider.value);
       /* Con paso fijo el último escalón puede quedar debajo del precio:
          al llegar ahí, se fija el valor exacto del 100% */
       if (v >= maxBid - CFG.BID_STEP) v = maxBid;
-      bidSync.state.set(i, v);
-      syncBidCar(i);
+      bidSync.state.set(id, v);
+      syncBidCar(id);
     });
 
-    btn.addEventListener('click', () => submitBid(car, i, bidSync.state.get(i), btn, status));
+    btn.addEventListener('click', () => submitBid(car, bidSync.state.get(id), btn, status));
 
-    syncBidCar(i);
+    syncBidCar(id);
   }
 
   function buildSelect() {
     select.innerHTML = '<option value="">— Elige un auto del inventario —</option>';
-    cars.forEach((car, i) => {
+    cars.forEach((car) => {
       const opt = document.createElement('option');
-      opt.value = i;
-      opt.textContent = `Auto ${i + 1} · ${car.Marca || ''} ${car.Modelo || ''} (${car.Año || car.Anio || ''})`;
+      opt.value = car.id;
+      opt.textContent = `Auto ${car.id} · ${car.Marca || ''} ${car.Modelo || ''} (${car.Año || car.Anio || ''})`;
       select.appendChild(opt);
     });
   }
 
   /* ---------- Puja funcional (envía a la hoja vía Apps Script) ---------- */
 
-  async function submitBid(car, i, bid, btn, status) {
+  async function submitBid(car, bid, btn, status) {
     const puja = Number(bid);
     const precio = Number(car.Precio) || 0;
     const pct = Math.round((puja / (precio || 1)) * 100);
@@ -333,7 +352,7 @@
     /* Abre WhatsApp del vendedor con el resumen de la puja en el mismo clic
        (así el navegador no bloquea la ventana), para contactar al cliente. */
     const waMsg =
-      'Hola AD Motors! Quiero hacer una oferta por el ' + marca + ' ' + anio + ' (Auto ' + (i + 1) + ').\n\n' +
+      'Hola AD Motors! Quiero hacer una oferta por el ' + marca + ' ' + anio + ' (Auto ' + car.id + ').\n\n' +
       'Oferta: ' + formatter.money(puja) + ' (' + pct + '% del precio)\n' +
       'Precio: ' + formatter.money(precio) + '\n' +
       'Kilómetros: ' + formatter.number(km) + ' km\n' +
@@ -345,7 +364,7 @@
     status.textContent = 'Enviando oferta…';
 
     const payload = {
-      auto: i + 1,
+      auto: car.id,
       marca: marca,
       puja: puja,
       precio: precio,
@@ -384,7 +403,7 @@
   overlay.id = 'carOverlay';
   document.body.appendChild(overlay);
 
-  function openOverlay(car, i) {
+  function openOverlay(car) {
     const images = getImages(car);
     const marca = car.Marca || 'Sin marca';
     const modelo = car.Modelo || '';
@@ -406,7 +425,7 @@
     overlay.innerHTML = `
       <div class="overlay-card" role="dialog" aria-modal="true" aria-label="Características de ${marca} ${modelo} ${anio}">
         <div class="overlay-head">
-          <p class="overlay-badge">Auto ${i + 1} · ${marca} ${modelo} ${anio}</p>
+          <p class="overlay-badge">Auto ${car.id} · ${marca} ${modelo} ${anio}</p>
           <button class="overlay-close" type="button">
             Cerrar
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
@@ -435,7 +454,7 @@
             <h3 class="features-title">Características del vehículo</h3>
             <div class="features">${renderFeatures(car.features)}</div>
             <div class="card-bid overlay-bid">
-              ${bidBlockHtml(car, i)}
+        ${bidBlockHtml(car)}
               <button class="bid-btn" type="button">Enviar oferta por WhatsApp</button>
               <p class="bid-status" aria-live="polite"></p>
             </div>
@@ -463,7 +482,7 @@
     });
 
     /* Slider de puja del overlay: mismos valores 70% → 100% y mismo envío */
-    wireBid(overlay.querySelector('.overlay-bid'), car, i);
+    wireBid(overlay.querySelector('.overlay-bid'), car, car.id);
 
     overlay.classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -557,11 +576,18 @@
 
   select.addEventListener('change', () => {
     if (select.value === '') return;
-    const card = grid.children[Number(select.value)];
+    const card = grid.querySelector('.card[data-id="' + select.value + '"]');
     if (!card) return;
     card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     card.classList.add('is-highlight');
     setTimeout(() => card.classList.remove('is-highlight'), 2000);
+  });
+
+  /* ---------- Orden del inventario ---------- */
+
+  sortSelect.addEventListener('change', () => {
+    sortMode = sortSelect.value;
+    renderCars(cars);
   });
 
   /* ---------- Utilidades ---------- */

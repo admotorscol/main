@@ -424,6 +424,42 @@ button {
   font-size: 0.95rem;
 }
 
+.inventory-head-left {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inventory-sort {
+  display: flex;
+  align-items: center;
+}
+
+.inventory-sort select {
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.inventory-sort select:hover,
+.inventory-sort select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(158, 27, 57, 0.2);
+}
+
+.inventory-sort select option {
+  background: var(--bg-soft);
+  color: var(--text);
+}
+
 .cards-empty {
   grid-column: 1 / -1;
   padding: 48px 24px;
