@@ -365,15 +365,17 @@
     `;
 
     const featuresBtn = card.querySelector('.card-features-btn');
+    const cardImg = card.querySelector('.card-img');
 
     /* Detecta la orientación real de la foto (clases is-tall/square/wide) */
-    applyImageRatio(card.querySelector('.card-img img'), card.querySelector('.card-img'));
+    applyImageRatio(card.querySelector('.card-img img'), cardImg);
 
     if (!sold) {
       wireBid(card, car, car.id);
     }
 
     featuresBtn.addEventListener('click', () => openOverlay(car));
+    cardImg.addEventListener('click', () => openOverlay(car));
 
     return card;
   }
