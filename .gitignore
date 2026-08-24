@@ -13,3 +13,6 @@ Thumbs.db
 
 # Notas personales
 assets.txt
+
+# Graphify (knowledge graph)
+graphify-out/
