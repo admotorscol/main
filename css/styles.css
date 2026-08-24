@@ -358,6 +358,34 @@ button {
   transform: scale(0.97);
 }
 
+.sell-car-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: min(560px, 100%);
+  margin-top: 4px;
+  padding: 14px 22px;
+  border-radius: 999px;
+  border: 1.5px solid var(--accent);
+  background: rgba(158, 27, 57, 0.16);
+  color: var(--text);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: 0 0 22px rgba(158, 27, 57, 0.35);
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sell-car-btn:hover {
+  background: var(--accent);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 34px rgba(158, 27, 57, 0.5);
+}
+
 .hero-scroll {
   display: flex;
   justify-content: center;

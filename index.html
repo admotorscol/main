@@ -3,14 +3,112 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="AD Motors — Selecciona tu próximo carro en Medellín. Inventario con pujas en vivo.">
+  <meta name="description" content="AD Motors — Compra y venta de carros en Medellín y Bogotá. Vehículos revisados técnicamente, precios transparentes y pujas en vivo.">
+  <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#0b0e14">
-  <title>AD Motors | Selecciona tu próximo carro</title>
+  <link rel="canonical" href="https://admotors.shop/">
+  <title>AD Motors | Compra y venta de carros en Medellín y Bogotá</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23171717'/%3E%3Ctext x='16' y='23' font-family='Arial,sans-serif' font-size='17' font-weight='900' fill='%23e11d48' text-anchor='middle'%3EAD%3C/text%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,1..1000&family=Michroma&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://admotors.shop/#organization",
+        "name": "AD Motors",
+        "url": "https://admotors.shop/",
+        "logo": "https://admotors.shop/img/logo.png",
+        "image": "https://admotors.shop/img/logo.png",
+        "sameAs": [
+          "https://www.instagram.com/admotors",
+          "https://www.tiktok.com/@admotors",
+          "https://www.facebook.com/admotors"
+        ]
+      },
+      {
+        "@type": "AutoDealer",
+        "@id": "https://admotors.shop/#medellin",
+        "name": "AD Motors - Medellín",
+        "url": "https://admotors.shop/",
+        "parentOrganization": { "@id": "https://admotors.shop/#organization" },
+        "telephone": "+573229480996",
+        "priceRange": "$$",
+        "image": "https://admotors.shop/img/logo.png",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Medellín",
+          "addressRegion": "Antioquia",
+          "addressCountry": "CO"
+        },
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": 6.2442,
+          "longitude": -75.5812
+        },
+        "openingHoursSpecification": {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+          "opens": "09:00",
+          "closes": "19:00"
+        },
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "telephone": "+573229480996",
+          "contactType": "sales",
+          "availableLanguage": ["es"]
+        },
+        "sameAs": [
+          "https://www.instagram.com/admotors",
+          "https://www.tiktok.com/@admotors",
+          "https://www.facebook.com/admotors"
+        ]
+      },
+      {
+        "@type": "AutoDealer",
+        "@id": "https://admotors.shop/#bogota",
+        "name": "AD Motors - Bogotá",
+        "url": "https://admotors.shop/",
+        "parentOrganization": { "@id": "https://admotors.shop/#organization" },
+        "telephone": "+573229480996",
+        "priceRange": "$$",
+        "image": "https://admotors.shop/img/logo.png",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Bogotá",
+          "addressRegion": "Cundinamarca",
+          "addressCountry": "CO"
+        },
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": 4.711,
+          "longitude": -74.0721
+        },
+        "openingHoursSpecification": {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+          "opens": "09:00",
+          "closes": "19:00"
+        },
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "telephone": "+573229480996",
+          "contactType": "sales",
+          "availableLanguage": ["es"]
+        },
+        "sameAs": [
+          "https://www.instagram.com/admotors",
+          "https://www.tiktok.com/@admotors",
+          "https://www.facebook.com/admotors"
+        ]
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
   <header class="hero">
@@ -75,9 +173,9 @@
 
         <div class="social-proof-badge">
           <div class="avatar-group" aria-hidden="true">
-            <img src="https://picsum.photos/seed/adm1/68/68" alt="">
-            <img src="https://picsum.photos/seed/adm2/68/68" alt="">
-            <img src="https://picsum.photos/seed/adm3/68/68" alt="">
+            <img src="https://picsum.photos/seed/adm1/68/68" alt="" loading="lazy" decoding="async">
+            <img src="https://picsum.photos/seed/adm2/68/68" alt="" loading="lazy" decoding="async">
+            <img src="https://picsum.photos/seed/adm3/68/68" alt="" loading="lazy" decoding="async">
           </div>
           <span><strong>120+</strong> autos vendidos con confianza</span>
         </div>
@@ -88,7 +186,7 @@
         </h1>
 
         <p class="hero-subtitle">
-          Carros revisados técnicamente, precios transparentes y compra segura en Medellín.
+          Carros revisados técnicamente, precios transparentes y compra segura en Medellín y Bogotá.
         </p>
 
         <div class="car-form">
@@ -104,6 +202,10 @@
           </button>
         </div>
 
+        <a class="sell-car-btn" href="vender.html">
+          Quiero vender mi carro
+        </a>
+
       </div>
 
       <a class="hero-scroll" href="#inventario" aria-label="Ver inventario">
@@ -118,7 +220,7 @@
 
   <main>
     <section class="inventory" id="inventario" aria-labelledby="inventario-title">
-      <img class="inventory-logo" src="img/logo.png" alt="Logo de AD Motors" width="150" height="150">
+      <img class="inventory-logo" src="img/logo.png" alt="Logo de AD Motors" width="150" height="150" loading="lazy" decoding="async">
       <div class="inventory-head">
         <div class="inventory-head-left">
           <h2 class="inventory-title" id="inventario-title">Nuestro inventario</h2>

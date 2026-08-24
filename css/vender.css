@@ -1,0 +1,348 @@
+/* ============================================================
+   AD MOTORS — Estilos de la página "Vende tu carro"
+   ============================================================ */
+
+.sell-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px clamp(16px, 4vw, 64px);
+  border-bottom: 1px solid var(--border);
+  background: rgba(19, 19, 19, 0.85);
+  backdrop-filter: blur(8px);
+}
+
+.sell-header-back {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  transition: color 0.2s ease;
+}
+
+.sell-header-back:hover {
+  color: var(--text);
+}
+
+.sell-main {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 40px clamp(16px, 4vw, 32px) 80px;
+}
+
+.sell-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.sell-subtitle {
+  color: var(--text-dim);
+  margin-bottom: 32px;
+}
+
+/* ---- Formulario ---- */
+
+.sell-form fieldset#sellFields {
+  border: none;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+.sell-form fieldset#sellFields[disabled] {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.form-section--agreement {
+  border-color: var(--accent);
+}
+
+.form-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.form-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.field input,
+.field select {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.field input:focus,
+.field select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(158, 27, 57, 0.2);
+}
+
+.field input::placeholder {
+  color: #52525b;
+}
+
+.field select {
+  cursor: pointer;
+}
+
+.field select option {
+  background: var(--bg-soft);
+  color: var(--text);
+}
+
+/* ---- Fotos ---- */
+
+.photos-hint {
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  margin-bottom: 14px;
+}
+
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 20px;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  text-align: center;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.dropzone strong {
+  color: var(--text);
+}
+
+.dropzone-hint {
+  font-size: 0.85rem;
+}
+
+.dropzone:hover,
+.dropzone.dragover {
+  border-color: var(--accent);
+  background: rgba(158, 27, 57, 0.06);
+}
+
+.photo-previews {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.photo-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.photo-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.photo-remove:hover {
+  background: var(--accent);
+}
+
+.photo-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+/* ---- Botón enviar ---- */
+
+.sell-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 999px;
+  background: var(--whatsapp);
+  color: #06251a;
+  font-weight: 800;
+  font-size: 1.05rem;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(37, 211, 102, 0.35);
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.sell-submit:hover {
+  background: var(--whatsapp-hover);
+  transform: translateY(-2px);
+}
+
+.sell-status {
+  display: none;
+  margin-top: 14px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+
+.sell-status.show {
+  display: block;
+}
+
+.sell-status.ok {
+  color: var(--success);
+}
+
+/* ---- Cuestionario ---- */
+
+.quiz-question {
+  margin-bottom: 14px;
+  color: var(--text);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.quiz-options {
+  display: flex;
+  gap: 12px;
+}
+
+.quiz-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.quiz-option input {
+  width: auto;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.quiz-option:has(input:checked) {
+  border-color: var(--accent);
+  background: rgba(158, 27, 57, 0.12);
+}
+
+.quiz-reject {
+  margin-top: 16px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  text-align: center;
+}
+
+.quiz-reject p {
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+.quiz-reject strong {
+  color: var(--text);
+}
+
+.sell-noscript {
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--text-dim);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+}
+
+/* ---- Campo trampa (honeypot) oculto ---- */
+
+.hp-field {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---- Responsive ---- */
+
+@media (max-width: 600px) {
+  .field-grid {
+    grid-template-columns: 1fr;
+  }
+}
