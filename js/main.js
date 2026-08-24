@@ -12,6 +12,11 @@
   const countEl = document.getElementById('inventoryCount');
   const toast = document.getElementById('toast');
   const sortSelect = document.getElementById('sortSelect');
+  const filterMarca = document.getElementById('filterMarca');
+  const filterAnio = document.getElementById('filterAnio');
+  const filterPrecio = document.getElementById('filterPrecio');
+  const filterKm = document.getElementById('filterKm');
+  const filterUbicacion = document.getElementById('filterUbicacion');
 
   /* Caché local del inventario (30 min): las visitas se sirven al instante
      mientras Apps Script arranca en frío (cold start de Google). */
@@ -155,7 +160,7 @@
     renderCars(fresh);
   }
 
-  /* ---------- Orden ---------- */
+  /* ---------- Orden y filtros ---------- */
 
   /* Comparadores por modo de orden. La antigüedad se infiere del orden de filas
      en Google Sheets (car.id = nº de fila); el precio se lee de la columna Precio. */
@@ -166,16 +171,127 @@
     'precio-desc': (a, b) => (Number(b.Precio) || 0) - (Number(a.Precio) || 0)
   };
 
-  /* Devuelve una copia ordenada (no muta la lista maestra `cars`). */
+  /* Convierte "46.999.000", "32.500 km", etc. en número (46999000). */
+  function parseNumber(v) {
+    const n = Number(String(v).replace(/[^\d]/g, ''));
+    return isFinite(n) ? n : 0;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  /* "bogotá" o "BOGOTÁ" -> "Bogotá" (para mostrar y comparar ubicaciones). */
+  function titleCase(s) {
+    return String(s || '').trim().replace(/\s+/g, ' ').toLowerCase()
+      .replace(/(^|[\s-])\S/g, (m) => m.toUpperCase());
+  }
+
+  /* Lee los valores actuales de los filtros. */
+  function readFilters() {
+    return {
+      marca: filterMarca.value,
+      anio: filterAnio.value,
+      precio: filterPrecio.value,
+      km: filterKm.value,
+      ubicacion: filterUbicacion.value
+    };
+  }
+
+  /* Devuelve los autos que pasan los filtros (no muta la lista maestra). */
+  function filteredCars() {
+    const f = readFilters();
+    return cars.filter((car) => {
+      if (f.marca && String(car.Marca || '').trim().toLowerCase() !== f.marca.toLowerCase()) return false;
+
+      if (f.anio && String(car.Año || car.Anio || '').trim() !== f.anio) return false;
+
+      if (f.precio) {
+        const max = Number(f.precio);
+        if (max > 0 && parseNumber(car.Precio) > max) return false;
+      }
+
+      if (f.km) {
+        if (f.km === 'over100000') {
+          if (parseNumber(car.Km) <= 100000) return false;
+        } else if (parseNumber(car.Km) > Number(f.km)) {
+          return false;
+        }
+      }
+
+      if (f.ubicacion && titleCase(car.Ubicación || car.Ubicacion) !== f.ubicacion) return false;
+
+      return true;
+    });
+  }
+
+  function restoreOption(sel, value) {
+    if (!value) return;
+    if (Array.from(sel.options).some((o) => o.value === value)) sel.value = value;
+  }
+
+  /* Puebla los desplegables de filtro a partir de los autos activos (no vendidos). */
+  function buildFilters() {
+    const active = cars.filter((c) => !c.vendido);
+
+    const prev = {
+      marca: filterMarca.value,
+      anio: filterAnio.value,
+      precio: filterPrecio.value,
+      ubicacion: filterUbicacion.value
+    };
+
+    /* Marca: solo las disponibles */
+    const marcas = Array.from(new Set(active.map((c) => String(c.Marca || '').trim()).filter(Boolean)))
+      .sort((a, b) => a.localeCompare(b, 'es'));
+    filterMarca.innerHTML = '<option value="">Todas</option>' +
+      marcas.map((m) => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+
+    /* Ubicación */
+    const ubis = Array.from(new Set(active.map((c) => titleCase(c.Ubicación || c.Ubicacion)).filter(Boolean)))
+      .sort((a, b) => a.localeCompare(b, 'es'));
+    filterUbicacion.innerHTML = '<option value="">Todas</option>' +
+      ubis.map((u) => `<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join('');
+
+    /* Año: solo los años disponibles (vendidos o no) */
+    const anios = Array.from(new Set(cars.map((c) => parseInt(String(c.Año || c.Anio || '').trim(), 10))
+      .filter((n) => isFinite(n) && n > 0))).sort((a, b) => a - b);
+    filterAnio.innerHTML = '<option value="">Todos</option>' +
+      anios.map((y) => `<option value="${y}">${y}</option>`).join('');
+
+    /* Precio: redondear cada precio activo al siguiente múltiplo de 10 millones */
+    const escalones = Array.from(new Set(
+      active.map((c) => Math.ceil(parseNumber(c.Precio) / 10000000) * 10000000).filter((n) => n > 0)
+    )).sort((a, b) => a - b);
+    filterPrecio.innerHTML = '<option value="">Sin límite</option>' +
+      escalones.map((p) => `<option value="${p}">Hasta ${formatter.money(p)}</option>`).join('');
+
+    /* Restaurar selección previa si sigue existiendo */
+    restoreOption(filterMarca, prev.marca);
+    restoreOption(filterAnio, prev.anio);
+    restoreOption(filterPrecio, prev.precio);
+    restoreOption(filterUbicacion, prev.ubicacion);
+  }
+
+  /* Devuelve los autos filtrados y ordenados (copia, no muta `cars`). */
   function sortedCars() {
     const cmp = sortComparators[sortMode];
-    return cmp ? cars.slice().sort(cmp) : cars.slice();
+    const list = filteredCars();
+    return cmp ? list.sort(cmp) : list;
   }
 
   /* ---------- Render ---------- */
 
   function renderCars(list) {
     cars = list;
+    buildFilters();
+    renderGrid();
+    buildSelect();
+  }
+
+  function renderGrid() {
     grid.innerHTML = '';
     bidSync.uis.clear();
 
@@ -185,12 +301,19 @@
       return;
     }
 
-    sortedCars().forEach((car) => {
+    const visible = sortedCars();
+
+    if (!visible.length) {
+      countEl.textContent = 'Sin coincidencias';
+      grid.innerHTML = '<p class="cards-empty">Ningún auto coincide con los filtros. Prueba con otros valores.</p>';
+      return;
+    }
+
+    visible.forEach((car) => {
       grid.appendChild(buildCard(car));
     });
 
-    countEl.textContent = cars.length + ' autos disponibles';
-    buildSelect();
+    countEl.textContent = visible.length + ' autos disponibles';
   }
 
   function buildCard(car) {
@@ -594,11 +717,15 @@
     setTimeout(() => card.classList.remove('is-highlight'), 2000);
   });
 
-  /* ---------- Orden del inventario ---------- */
+  /* ---------- Orden y filtros del inventario ---------- */
 
   sortSelect.addEventListener('change', () => {
     sortMode = sortSelect.value;
-    renderCars(cars);
+    renderGrid();
+  });
+
+  [filterMarca, filterAnio, filterPrecio, filterKm, filterUbicacion].forEach((el) => {
+    el.addEventListener('change', renderGrid);
   });
 
   /* ---------- Utilidades ---------- */

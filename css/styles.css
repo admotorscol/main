@@ -488,6 +488,61 @@ button {
   color: var(--text);
 }
 
+/* ---- Filtros del inventario ---- */
+
+.inventory-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.filter-field > span {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.filter-field input,
+.filter-field select {
+  padding: 11px 13px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.filter-field input:focus,
+.filter-field select:focus {
+  border-color: var(--accent);
+}
+
+.filter-field input::placeholder {
+  color: #52525b;
+}
+
+.filter-field select {
+  cursor: pointer;
+}
+
+.filter-field select option {
+  background: var(--bg-soft);
+  color: var(--text);
+}
+
 .cards-empty {
   grid-column: 1 / -1;
   padding: 48px 24px;
