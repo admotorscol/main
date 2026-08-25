@@ -6,8 +6,8 @@
   --border: #52525b;
   --text: #fafafa;
   --text-dim: #a1a1aa;
-  --accent: #9e1b39;
-  --accent-hover: #7e1430;
+  --accent: #ff8400;
+  --accent-hover: #cc6600;
   --whatsapp: #25d366;
   --whatsapp-hover: #3ee07a;
   --success: #34d399;
@@ -142,7 +142,7 @@ button {
 }
 
 .logo span {
-  color: var(--accent);
+  color: #a73131;
 }
 
 .app-download-info {
@@ -368,14 +368,14 @@ button {
   padding: 14px 22px;
   border-radius: 999px;
   border: 1.5px solid var(--accent);
-  background: rgba(158, 27, 57, 0.16);
+  background: rgba(255, 132, 0, 0.16);
   color: var(--text);
   font-weight: 700;
   font-size: 1rem;
   letter-spacing: 0.01em;
   text-decoration: none;
   white-space: nowrap;
-  box-shadow: 0 0 22px rgba(158, 27, 57, 0.35);
+  box-shadow: 0 0 22px rgba(255, 132, 0, 0.35);
   transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -383,7 +383,7 @@ button {
   background: var(--accent);
   color: #fff;
   transform: translateY(-2px);
-  box-shadow: 0 10px 34px rgba(158, 27, 57, 0.5);
+  box-shadow: 0 10px 34px rgba(255, 132, 0, 0.5);
 }
 
 .hero-scroll {
@@ -480,7 +480,7 @@ button {
 .inventory-sort select:hover,
 .inventory-sort select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(158, 27, 57, 0.2);
+  box-shadow: 0 0 0 3px rgba(255, 132, 0, 0.2);
 }
 
 .inventory-sort select option {
@@ -676,7 +676,7 @@ button {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #d4d4d4;
-  background: rgba(158, 27, 57, 0.6);
+  background: rgba(167, 49, 49, 0.6);
   padding: 6px 20px;
   border-radius: 14px;
   white-space: nowrap;
@@ -1354,7 +1354,7 @@ button {
 }
 
 .footer-logo span {
-  color: var(--accent);
+  color: #a73131;
 }
 
 .footer-tagline {
