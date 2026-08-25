@@ -542,6 +542,24 @@
   overlay.id = 'carOverlay';
   document.body.appendChild(overlay);
 
+  /* Refleja en la URL los datos del auto abierto (marca, precio, año, km, ubicación). */
+  function setCarUrlParams(car) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('marca', String(car.Marca || ''));
+    url.searchParams.set('precio', String(car.Precio || ''));
+    url.searchParams.set('anio', String(car.Año || car.Anio || ''));
+    url.searchParams.set('km', String(car.Km || ''));
+    url.searchParams.set('ubicacion', String(car.Ubicación || car.Ubicacion || ''));
+    history.replaceState(null, '', url);
+  }
+
+  /* Quita los parámetros del auto al cerrar la vista. */
+  function clearCarUrlParams() {
+    const url = new URL(window.location.href);
+    ['marca', 'precio', 'anio', 'km', 'ubicacion'].forEach((k) => url.searchParams.delete(k));
+    history.replaceState(null, '', url);
+  }
+
   function openOverlay(car) {
     const sold = !!car.vendido;
     const images = getImages(car);
@@ -631,12 +649,14 @@
     }
 
     overlay.classList.add('open');
+    setCarUrlParams(car);
     document.body.style.overflow = 'hidden';
     overlay.querySelector('.overlay-close').focus();
 
     lastClose = () => {
       overlay.classList.remove('open');
       document.body.style.overflow = '';
+      clearCarUrlParams();
       lastClose = null;
     };
 
