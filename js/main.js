@@ -240,6 +240,7 @@
       marca: filterMarca.value,
       anio: filterAnio.value,
       precio: filterPrecio.value,
+      km: filterKm.value,
       ubicacion: filterUbicacion.value
     };
 
@@ -255,8 +256,8 @@
     filterUbicacion.innerHTML = '<option value="">Todas</option>' +
       ubis.map((u) => `<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join('');
 
-    /* Año: solo los años disponibles (vendidos o no) */
-    const anios = Array.from(new Set(cars.map((c) => parseInt(String(c.Año || c.Anio || '').trim(), 10))
+    /* Año: solo los años de los autos activos */
+    const anios = Array.from(new Set(active.map((c) => parseInt(String(c.Año || c.Anio || '').trim(), 10))
       .filter((n) => isFinite(n) && n > 0))).sort((a, b) => a - b);
     filterAnio.innerHTML = '<option value="">Todos</option>' +
       anios.map((y) => `<option value="${y}">${y}</option>`).join('');
@@ -268,10 +269,19 @@
     filterPrecio.innerHTML = '<option value="">Sin límite</option>' +
       escalones.map((p) => `<option value="${p}">Hasta ${formatter.money(p)}</option>`).join('');
 
+    /* Km: redondear cada km activo al siguiente múltiplo de 10.000 */
+    const kms = Array.from(new Set(
+      active.map((c) => Math.max(10000, Math.ceil(parseNumber(c.Km) / 10000) * 10000)).filter((n) => n > 0)
+    )).sort((a, b) => a - b);
+    filterKm.innerHTML = '<option value="">Sin límite</option>' +
+      kms.map((k) => `<option value="${k}">Hasta ${formatter.number(k)} km</option>`).join('') +
+      '<option value="over100000">Más de 100.000 km</option>';
+
     /* Restaurar selección previa si sigue existiendo */
     restoreOption(filterMarca, prev.marca);
     restoreOption(filterAnio, prev.anio);
     restoreOption(filterPrecio, prev.precio);
+    restoreOption(filterKm, prev.km);
     restoreOption(filterUbicacion, prev.ubicacion);
   }
 
@@ -459,7 +469,7 @@
 
   function buildSelect() {
     select.innerHTML = '<option value="">— Elige un auto del inventario —</option>';
-    cars.forEach((car) => {
+    cars.filter((car) => !car.vendido).forEach((car) => {
       const opt = document.createElement('option');
       opt.value = car.id;
       opt.textContent = `Auto ${car.id} · ${car.Marca || ''} ${car.Modelo || ''} (${car.Año || car.Anio || ''})`;
