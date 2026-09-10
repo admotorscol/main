@@ -360,7 +360,7 @@
           <span class="spec-label">Km</span>
           <span class="spec-value">${formatter.number(km)} km</span>
         </div>
-        <div class="card-spec">
+        <div class="card-spec card-spec--full">
           <span class="spec-label">Precio</span>
           <span class="spec-value price">${formatter.money(precio)}</span>
         </div>
