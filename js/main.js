@@ -348,13 +348,9 @@
         <img src="${img}" alt="${marca} ${modelo} ${anio}" loading="eager" decoding="async" fetchpriority="high" onerror="this.src='${CFG.DEFAULT_IMAGE}'">
       </div>
       <div class="card-specs">
-        <div class="card-spec">
-          <span class="spec-label">Marca</span>
-          <span class="spec-value">${marca}</span>
-        </div>
-        <div class="card-spec">
-          <span class="spec-label">Precio</span>
-          <span class="spec-value price">${formatter.money(precio)}</span>
+        <div class="card-spec card-spec--full">
+          <span class="spec-label">Marca / Modelo</span>
+          <span class="spec-value">${[marca, modelo].filter(Boolean).join(' / ')}</span>
         </div>
         <div class="card-spec">
           <span class="spec-label">Año</span>
@@ -363,6 +359,10 @@
         <div class="card-spec">
           <span class="spec-label">Km</span>
           <span class="spec-value">${formatter.number(km)} km</span>
+        </div>
+        <div class="card-spec">
+          <span class="spec-label">Precio</span>
+          <span class="spec-value price">${formatter.money(precio)}</span>
         </div>
       </div>
       <div class="card-location">Ubicación: ${ubicacion}</div>

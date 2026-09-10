@@ -604,6 +604,7 @@ button {
 .card--skeleton .card-specs {
   padding: 16px;
   display: grid;
+  grid-template-columns: 1fr;
   gap: 10px;
 }
 
@@ -706,13 +707,16 @@ button {
   color: #e11d48;
 }
 
-/* Fila de especificaciones: 2 columnas x 2 filas */
+/* Fila de especificaciones: fila 1 (marca/modelo) + fila 2 (año, km, precio) */
 .card-specs {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: auto auto;
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px 10px;
   padding: 14px 16px 8px;
+}
+
+.card-spec--full {
+  grid-column: 1 / -1;
 }
 
 .card-spec {
