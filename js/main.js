@@ -560,6 +560,82 @@
     history.replaceState(null, '', url);
   }
 
+  /* Arma el texto plano con el 100% de los datos del auto (botón Copiar):
+     datos base + columnas extra de la hoja + características agrupadas. */
+  function buildCarText(car) {
+    const isImage = (k) => /^imagen(\s*\d*)?$/i.test(k);
+    const isInternal = (k) => /^(id|vendido|images|features)$/i.test(k);
+    const isBase = (k) => /^(marca|modelo|año|anio|precio|km|ubicación|ubicacion)$/i.test(k);
+    const marca = car.Marca || 'Sin marca';
+    const modelo = car.Modelo || '';
+    const anio = car.Año || car.Anio || '—';
+    const precio = Number(car.Precio) || 0;
+    const km = car.Km || 0;
+    const ubicacion = car.Ubicación || car.Ubicacion || 'Medellín';
+
+    const lines = [
+      'Auto ' + car.id + ' — ' + [marca, modelo, anio].filter(Boolean).join(' '),
+      '',
+      'Marca: ' + marca,
+      'Modelo: ' + modelo,
+      'Año: ' + anio,
+      'Precio: ' + formatter.money(precio),
+      'Kilómetros: ' + formatter.number(km) + ' km',
+      'Ubicación: ' + ubicacion
+    ];
+
+    /* Cualquier otra columna de la hoja que no sea base, interna ni imagen */
+    Object.keys(car).forEach((k) => {
+      if (isInternal(k) || isImage(k) || isBase(k)) return;
+      const v = car[k];
+      if (v === '' || v === null || v === undefined) return;
+      lines.push(k + ': ' + v);
+    });
+
+    /* Características del vehículo agrupadas por categoría */
+    if (Array.isArray(car.features) && car.features.length) {
+      lines.push('');
+      lines.push('Características del vehículo:');
+      car.features.forEach((group) => {
+        lines.push('');
+        lines.push(group.categoria + ':');
+        (group.items || []).forEach((it) => lines.push('  - ' + it.nombre + ': ' + it.valor));
+      });
+    }
+
+    return lines.join('\n');
+  }
+
+  /* Copia el texto al portapapeles (con respaldo para contextos no seguros). */
+  async function copyCarData(car, btn) {
+    const text = buildCarText(car);
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.top = '-1000px';
+        ta.setAttribute('readonly', '');
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      showToast('Datos del carro copiados', 'ok');
+      const label = btn && btn.querySelector('.overlay-copy-text');
+      if (label) {
+        label.textContent = 'Copiado';
+        clearTimeout(copyCarData._t);
+        copyCarData._t = setTimeout(() => { label.textContent = 'Copiar'; }, 2000);
+      }
+    } catch (err) {
+      console.warn('No se pudieron copiar los datos del carro:', err);
+      showToast('No se pudieron copiar los datos', 'err');
+    }
+  }
+
   function openOverlay(car) {
     const sold = !!car.vendido;
     const images = getImages(car);
@@ -592,12 +668,21 @@
       <div class="overlay-card${sold ? ' is-sold' : ''}" role="dialog" aria-modal="true" aria-label="Características de ${marca} ${modelo} ${anio}">
         <div class="overlay-head">
           <p class="overlay-badge">Auto ${car.id} · ${marca} ${modelo} ${anio}</p>
-          <button class="overlay-close" type="button">
-            Cerrar
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-              <path d="M18 6L6 18M6 6l12 12"></path>
-            </svg>
-          </button>
+          <div class="overlay-actions">
+            <button class="overlay-copy" type="button" aria-label="Copiar los datos del carro">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <rect x="9" y="9" width="12" height="12" rx="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <span class="overlay-copy-text">Copiar</span>
+            </button>
+            <button class="overlay-close" type="button">
+              Cerrar
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                <path d="M18 6L6 18M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
         </div>
         <div class="overlay-body">
           <div class="gallery">
@@ -647,6 +732,10 @@
     if (!sold) {
       wireBid(overlay.querySelector('.overlay-bid'), car, car.id);
     }
+
+    /* Copiar el 100% de los datos del auto al portapapeles */
+    const copyBtn = overlay.querySelector('.overlay-copy');
+    copyBtn.addEventListener('click', () => copyCarData(car, copyBtn));
 
     overlay.classList.add('open');
     setCarUrlParams(car);
