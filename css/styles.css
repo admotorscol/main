@@ -1184,6 +1184,68 @@ button {
   box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.25);
 }
 
+.gallery-main img {
+  cursor: zoom-in;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ---- Lightbox: imagen ampliada casi a pantalla completa ---- */
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(12px, 3vw, 32px);
+  background: rgba(0, 0, 0, 0.94);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  cursor: zoom-out;
+}
+
+.lightbox.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.lightbox-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 50%;
+  background: rgba(23, 23, 23, 0.85);
+  border: 1px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.lightbox-close:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.lightbox-close:active {
+  transform: scale(0.94);
+}
+
 .overlay-info {
   display: flex;
   flex-direction: column;

@@ -542,6 +542,42 @@
   overlay.id = 'carOverlay';
   document.body.appendChild(overlay);
 
+  /* Lightbox: imagen ampliada casi a pantalla completa */
+  const lightbox = document.createElement('div');
+  lightbox.className = 'lightbox';
+  lightbox.id = 'carLightbox';
+  lightbox.setAttribute('aria-hidden', 'true');
+  lightbox.innerHTML = `
+    <button class="lightbox-close" type="button" aria-label="Cerrar imagen">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+        <path d="M18 6L6 18M6 6l12 12"></path>
+      </svg>
+    </button>
+    <img class="lightbox-img" alt="" />
+  `;
+  document.body.appendChild(lightbox);
+
+  function openLightbox(src) {
+    const img = lightbox.querySelector('.lightbox-img');
+    img.src = src;
+    lightbox._prevOverflow = document.body.style.overflow;
+    lightbox.classList.add('open');
+    lightbox.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    lightbox.querySelector('.lightbox-close').focus();
+  }
+
+  function closeLightbox() {
+    lightbox.classList.remove('open');
+    lightbox.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = lightbox._prevOverflow || '';
+  }
+
+  lightbox.querySelector('.lightbox-close').addEventListener('click', closeLightbox);
+  lightbox.addEventListener('click', (e) => {
+    if (e.target === lightbox) closeLightbox();
+  });
+
   /* Refleja en la URL los datos del auto abierto (marca, precio, año, km, ubicación). */
   function setCarUrlParams(car) {
     const url = new URL(window.location.href);
@@ -709,24 +745,46 @@
         </div>
       </div>`;
 
-    /* Galería: clic en miniatura → imagen grande */
+    /* Galería: clic en miniatura → imagen grande, swipe en celular y tap para ampliar */
     const mainWrap = overlay.querySelector('.gallery-main');
     const mainImg = overlay.querySelector('.gallery-main img');
     const counter = overlay.querySelector('.gallery-counter');
-    applyImageRatio(mainImg, mainWrap);
-    overlay.querySelectorAll('.gallery-thumb').forEach((thumb) => {
-      thumb.addEventListener('click', () => {
-        overlay.querySelectorAll('.gallery-thumb').forEach((t) => {
-          t.classList.remove('active');
-          t.removeAttribute('aria-selected');
-        });
-        thumb.classList.add('active');
-        thumb.setAttribute('aria-selected', 'true');
-        mainImg.src = images[Number(thumb.dataset.index)];
-        applyImageRatio(mainImg, mainWrap);
-        counter.textContent = (Number(thumb.dataset.index) + 1) + ' / ' + images.length;
+    const thumbs = overlay.querySelectorAll('.gallery-thumb');
+    let currentIndex = 0;
+
+    function showImage(idx) {
+      currentIndex = (idx + images.length) % images.length;
+      mainImg.src = images[currentIndex];
+      applyImageRatio(mainImg, mainWrap);
+      counter.textContent = (currentIndex + 1) + ' / ' + images.length;
+      thumbs.forEach((t) => {
+        const active = Number(t.dataset.index) === currentIndex;
+        t.classList.toggle('active', active);
+        if (active) t.setAttribute('aria-selected', 'true');
+        else t.removeAttribute('aria-selected');
       });
+    }
+    applyImageRatio(mainImg, mainWrap);
+
+    thumbs.forEach((thumb) => {
+      thumb.addEventListener('click', () => showImage(Number(thumb.dataset.index)));
     });
+
+    /* Swipe horizontal para pasar imágenes con el dedo */
+    let touchStartX = null;
+    mainWrap.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].clientX;
+    }, { passive: true });
+    mainWrap.addEventListener('touchend', (e) => {
+      if (touchStartX === null) return;
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      touchStartX = null;
+      if (Math.abs(dx) < 40) return;
+      showImage(currentIndex + (dx < 0 ? 1 : -1));
+    }, { passive: true });
+
+    /* Tap/click en la imagen principal → ampliar casi a pantalla completa */
+    mainImg.addEventListener('click', () => openLightbox(images[currentIndex]));
 
     /* Slider de puja del overlay: mismos valores 70% → 100% y mismo envío */
     if (!sold) {
@@ -757,6 +815,10 @@
 
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
+    if (lightbox.classList.contains('open')) {
+      closeLightbox();
+      return;
+    }
     if (modal.classList.contains('open')) {
       closeModal();
       return;
